@@ -38,28 +38,28 @@ desenvolvimento (`http://192.168.1.202/`).
 - [x] PM2 configurado para iniciar no boot (`pm2 save` + `pm2 startup systemd`)
 - [x] Validado end-to-end via curl: login retorna JWT com permissoes, listagem e
       criacao de clientes funcionando com auditoria
+- [x] Push para GitHub concluido — `cirobrandao` adicionado como colaborador
+      com Write em `globalnervhub/sig-mechanic`; branch `main` publicado e
+      rastreando `origin/main`
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
-1. [ ] Criar reposit orio no GitHub e concluir o push (ver bloqueio abaixo)
-2. [ ] Tela de login real integrada com redirecionamento pos-auth + guarda de rotas no frontend
-3. [ ] Modulo de Veiculos (API + tela), vinculado a Clientes
-4. [ ] Modulo de Servicos, Mecanicos, Operadores (telas de cadastro)
-5. [ ] Ordem de Servico e Orcamento (MVP) — fluxo completo do Roadmap
-6. [ ] Popular roles adicionais e tela de gestao de usuarios/permissoes
-7. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
-8. [ ] Pipeline de deploy (`scripts/server/deploy.sh`) para automatizar
+1. [ ] Tela de login real integrada com redirecionamento pos-auth + guarda de rotas no frontend
+2. [ ] Modulo de Veiculos (API + tela), vinculado a Clientes
+3. [ ] Modulo de Servicos, Mecanicos, Operadores (telas de cadastro)
+4. [ ] Ordem de Servico e Orcamento (MVP) — fluxo completo do Roadmap
+5. [ ] Popular roles adicionais e tela de gestao de usuarios/permissoes
+6. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
+7. [ ] Pipeline de deploy (`scripts/server/deploy.sh`) para automatizar
       build + restart PM2 a cada atualizacao de codigo
-9. [ ] Iniciar importacao de dados do legado seguindo `docs/MIGRATION-MAPPING.md`
+8. [ ] Iniciar importacao de dados do legado seguindo `docs/MIGRATION-MAPPING.md`
 
 ## Bloqueios / Pontos em Aberto
 
-- **GitHub:** o remoto `https://github.com/globalnervhub/sig-mechanic.git` esta
-  configurado, mas o repositorio **nao existe** (push retornou "Repository not
-  found" e a URL publica retorna 404). O commit inicial ja foi feito localmente
-  (branch `main`). Acao necessaria do usuario: criar o repositorio vazio em
-  `github.com/globalnervhub/sig-mechanic` (sem README/license, para nao
-  conflitar com o commit local) e entao rodar `git push -u origin main`.
+- ~~GitHub: push negado por falta de permissao~~ **RESOLVIDO (2026-07-04)** —
+  usuario adicionou `cirobrandao` como colaborador com Write em
+  `globalnervhub/sig-mechanic`. Push concluido, branch `main` publicado e
+  rastreando `origin/main`.
 - Formato de importacao do "novo sistema alimentador" (mencionado pelo
   usuario) ainda nao foi detalhado — a integracao de importacao continua
   usando como base `docs/MIGRATION-MAPPING.md` (legado DOS) ate que o novo
@@ -74,9 +74,10 @@ desenvolvimento (`http://192.168.1.202/`).
 - Servidor dev: `192.168.1.202` (root, chave SSH configurada — ver
   `/memories/repo/servidor-desenvolvimento-info.md`)
 - App acessivel em: `http://192.168.1.202/` (frontend) e `http://192.168.1.202/api` (backend)
-- Deploy atual em: `/opt/sig-mechanic` no servidor (copiado via scp, fora do
-  fluxo git ate o repositorio remoto ser criado)
+- Deploy atual em: `/opt/sig-mechanic` no servidor (copiado via scp; ainda nao
+  ha pipeline automatico de `git pull` + deploy — proximo passo sugerido)
+- Repositorio GitHub: `https://github.com/globalnervhub/sig-mechanic` (ativo,
+  branch `main` publicado)
 - Usuario admin (seed): `admin@sig-mechanic.local` / `ChangeMe123!` — **alterar
   apos primeiro login**
-- Repositorio GitHub: `https://github.com/globalnervhub/sig-mechanic.git` (a criar)
 - Sem Docker no servidor — instalacao direta dos servicos (ver `AGENTS.md`)
