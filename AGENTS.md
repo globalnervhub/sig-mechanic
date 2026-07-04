@@ -77,6 +77,11 @@ integralmente por IA (ver [SIG-Mechanic.md](./SIG-Mechanic.md#stack-tecnológica
   outro LXC (para produção/comercialização futura).
 - Scripts de provisionamento devem ser **idempotentes** (podem rodar de novo
   sem quebrar nada).
+- **Deploy da aplicacao**: `/opt/sig-mechanic` no servidor e um **checkout
+  git** (branch `main`), nao mais copiado via `scp`. Para atualizar o
+  ambiente apos um push, rodar `ssh root@192.168.1.202 "cd /opt/sig-mechanic
+  && ./scripts/server/deploy.sh"` (idempotente: git pull + install + migrate
+  + build + restart PM2). Ver `scripts/server/README.md`.
 
 ## Repositorio GitHub
 

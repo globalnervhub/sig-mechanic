@@ -58,20 +58,29 @@ servidor de desenvolvimento (`http://192.168.1.202/`).
       abrir OS com pecas+servicos, criar orcamento e converte-lo em OS
 - [x] Build + deploy completo no servidor (backend e frontend rebuildados,
       PM2 reiniciado, todas as rotas retornando 200 via Nginx)
+- [x] Guarda de rotas no frontend (`AppShell` redireciona para `/login` sem
+      sessao; `apiFetch` desloga automaticamente em 401) + navbar com logout
+- [x] Formularios de criacao no frontend para Clientes, Veiculos, Mecanicos,
+      Operadores, Servicos, Ordem de Servico (servicos+pecas dinamicos) e
+      Orcamentos (itens dinamicos + botao "Converter em OS")
+- [x] Deploy migrado de `scp` manual para **git-based**: servidor agora roda
+      um checkout git de `/opt/sig-mechanic` (branch `main`); criado
+      `scripts/server/deploy.sh` (git pull + install + migrate + build +
+      restart PM2, idempotente) — ver `scripts/server/README.md`
+- [x] Cutover validado: login, listagem e dados existentes preservados apos
+      a migracao do deploy scp -> git
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
-1. [ ] Formularios de criacao/edicao no frontend (hoje as telas novas sao
-       apenas listagem — criacao funciona via API, falta UI)
-2. [ ] Tela de login com redirecionamento pos-auth + guarda de rotas no frontend
-       (hoje o login funciona mas paginas nao protegem contra acesso sem token)
-3. [ ] Tela de gestao de usuarios/roles/permissoes (hoje só via seed/banco)
-4. [ ] Financeiro, Fluxo de Caixa e Comissao (v1.0 do Roadmap — proxima fase
+1. [ ] Tela de gestao de usuarios/roles/permissoes (hoje só via seed/banco)
+2. [ ] Financeiro, Fluxo de Caixa e Comissao (v1.0 do Roadmap — proxima fase
        apos o MVP)
-5. [ ] Relatorios e Dashboard com indicadores reais (v1.0 do Roadmap)
+3. [ ] Relatorios e Dashboard com indicadores reais (v1.0 do Roadmap)
+4. [ ] Formularios de edicao/exclusao no frontend (hoje so ha criacao + listagem)
+5. [ ] Tela de mudanca de status da OS no frontend (hoje so via API)
 6. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
-7. [ ] Pipeline de deploy (`scripts/server/deploy.sh`) para automatizar
-      build + restart PM2 a cada atualizacao de codigo
+7. [ ] Remover backup `/opt/sig-mechanic-scp-backup` no servidor apos confirmar
+       estabilidade do novo fluxo de deploy por alguns dias
 8. [ ] Iniciar importacao de dados do legado seguindo `docs/MIGRATION-MAPPING.md`
 
 ## Bloqueios / Pontos em Aberto
