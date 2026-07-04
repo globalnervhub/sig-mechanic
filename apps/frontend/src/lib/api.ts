@@ -1,17 +1,6 @@
+import { getToken, clearSession } from './auth';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
-
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('sig_mechanic_token');
-}
-
-export function setToken(token: string) {
-  window.localStorage.setItem('sig_mechanic_token', token);
-}
-
-export function clearToken() {
-  window.localStorage.removeItem('sig_mechanic_token');
-}
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
@@ -23,6 +12,12 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
       ...options.headers,
     },
   });
+
+  if (res.status === 401 && typeof window !== 'undefined') {
+    clearSession();
+    window.location.href = '/login';
+    throw new Error('Sessao expirada, faca login novamente.');
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));

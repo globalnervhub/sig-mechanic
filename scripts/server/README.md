@@ -48,8 +48,49 @@ em local seguro (cofre de segredos / variaveis de ambiente do servidor) — elas
 4. Configurar Nginx (ver `scripts/server/nginx/`) e certificados HTTPS.
 5. Fazer deploy do codigo (`apps/backend`, `apps/frontend`) via PM2.
 
-## Proximos scripts planejados
+## Deploy da aplicacao (`deploy.sh`)
 
-- `deploy.sh` — build e restart das aplicacoes via PM2
-- `nginx/sig-mechanic.conf` — configuracao de reverse proxy para
-  frontend (Next.js) e backend (NestJS)
+A partir desta versao, o deploy e feito via **git**, nao mais copiando
+arquivos manualmente por `scp`.
+
+### Configuracao inicial (uma vez)
+
+```bash
+# No servidor, como root
+git clone https://github.com/globalnervhub/sig-mechanic.git /opt/sig-mechanic
+cd /opt/sig-mechanic
+
+# Criar os .env (nao versionados) com as credenciais reais
+nano apps/backend/.env    # ver apps/backend/.env.example
+nano apps/frontend/.env   # ver apps/frontend/.env.example
+
+# Primeira instalacao e build
+npm install --workspace=apps/backend
+npm install --workspace=apps/frontend
+npm run prisma:generate --workspace=apps/backend
+npx --workspace=apps/backend prisma migrate deploy
+npm run build --workspace=apps/backend
+npm run build --workspace=apps/frontend
+
+# Subir com PM2 (ecosystem.config.js referencia caminhos absolutos)
+pm2 start scripts/server/ecosystem.config.js
+pm2 save
+pm2 startup systemd -u root --hp /root
+```
+
+### Deploys seguintes (rotina)
+
+```bash
+ssh root@192.168.1.202 "cd /opt/sig-mechanic && ./scripts/server/deploy.sh"
+```
+
+O script `deploy.sh` faz `git pull`, reinstala dependencias se necessario,
+aplica migrations pendentes do Prisma, rebuilda backend e frontend, e reinicia
+os processos PM2. E idempotente e seguro de rodar repetidamente.
+
+## Scripts disponiveis
+
+- `provision.sh` — provisiona a stack base do zero (Node, PostgreSQL, Redis, MinIO, Nginx)
+- `deploy.sh` — atualiza o codigo (git pull) e reconstroi/reinicia a aplicacao
+- `ecosystem.config.js` — configuracao do PM2 para os dois processos (backend/frontend)
+- `nginx/sig-mechanic.conf` — reverse proxy unico: `/api/*` -> backend, `/*` -> frontend

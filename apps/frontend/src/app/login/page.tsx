@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch, setToken } from '@/lib/api';
+import { apiFetch } from '@/lib/api';
+import { setSession, isAuthenticated } from '@/lib/auth';
 
 interface LoginResponse {
   accessToken: string;
@@ -16,6 +17,12 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.replace('/');
+    }
+  }, [router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -25,7 +32,7 @@ export default function LoginPage() {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      setToken(data.accessToken);
+      setSession(data.accessToken, data.user);
       router.push('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao autenticar');
