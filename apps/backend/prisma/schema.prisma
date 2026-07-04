@@ -1,0 +1,239 @@
+// Schema inicial do SIG-Mechanic - cobre o MVP do Roadmap (ver SIG-Mechanic.md)
+// Convencao: nomes de tabela/coluna em snake_case via @@map/@map; camelCase no TS.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------
+// Autenticacao / RBAC
+// ------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  active       Boolean  @default(true)
+  roleId       String   @map("role_id")
+  role         Role     @relation(fields: [roleId], references: [id])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  users       User[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+
+  @@map("roles")
+}
+
+model Permission {
+  id    String           @id @default(uuid())
+  code  String           @unique // ex: clientes.criar, clientes.editar
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// ------------------------------
+// Clientes
+// ------------------------------
+
+model Client {
+  id           String    @id @default(uuid())
+  legacyCode   String?   @map("legacy_code") // rastreabilidade com clientes.dbf (NUMERO)
+  type         ClientType @default(PF)
+  name         String
+  cpf          String?
+  cnpj         String?
+  rg           String?
+  ie           String?
+  birthDate    DateTime? @map("birth_date")
+  phone        String?
+  whatsapp     String?
+  email        String?
+  zipCode      String?   @map("zip_code")
+  street       String?
+  number       String?
+  neighborhood String?
+  city         String?
+  state        String?
+  notes        String?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  vehicles Vehicle[]
+  orders   Order[]
+
+  @@map("clients")
+}
+
+enum ClientType {
+  PF
+  PJ
+}
+
+// ------------------------------
+// Veiculos
+// ------------------------------
+
+model Vehicle {
+  id         String   @id @default(uuid())
+  clientId   String   @map("client_id")
+  client     Client   @relation(fields: [clientId], references: [id])
+  brand      String
+  model      String
+  year       String?
+  color      String?
+  fuel       String?
+  engine     String?
+  plate      String
+  chassis    String?
+  renavam    String?
+  currentKm  Int?     @map("current_km")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  orders Order[]
+
+  @@map("vehicles")
+}
+
+// ------------------------------
+// Mecanicos / Operadores
+// ------------------------------
+
+model Mechanic {
+  id                String   @id @default(uuid())
+  name              String
+  phone             String?
+  specialty         String?
+  active            Boolean  @default(true)
+  admissionDate     DateTime? @map("admission_date")
+  commissionPercent Decimal? @map("commission_percent") @db.Decimal(5, 2)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  orderServices OrderService[]
+
+  @@map("mechanics")
+}
+
+model Operator {
+  id        String   @id @default(uuid())
+  name      String
+  role      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("operators")
+}
+
+// ------------------------------
+// Servicos (catalogo)
+// ------------------------------
+
+model Service {
+  id          String   @id @default(uuid())
+  name        String
+  category    String?
+  price       Decimal  @db.Decimal(10, 2)
+  avgTimeMin  Int?     @map("avg_time_min")
+  warrantyDays Int?    @map("warranty_days")
+  description String?
+  active      Boolean  @default(true)
+
+  orderServices OrderService[]
+
+  @@map("services")
+}
+
+// ------------------------------
+// Ordem de Servico
+// ------------------------------
+
+model Order {
+  id             String      @id @default(uuid())
+  legacyNumber   String?     @map("legacy_number")
+  clientId       String      @map("client_id")
+  client         Client      @relation(fields: [clientId], references: [id])
+  vehicleId      String      @map("vehicle_id")
+  vehicle        Vehicle     @relation(fields: [vehicleId], references: [id])
+  status         OrderStatus @default(OPEN)
+  openedAt       DateTime    @default(now()) @map("opened_at")
+  closedAt       DateTime?   @map("closed_at")
+  partsTotal     Decimal     @default(0) @map("parts_total") @db.Decimal(10, 2)
+  servicesTotal  Decimal     @default(0) @map("services_total") @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+
+  orderServices OrderService[]
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  OPEN
+  WAITING_PARTS
+  IN_PROGRESS
+  WAITING_CLIENT
+  DONE
+  CANCELLED
+}
+
+model OrderService {
+  id         String   @id @default(uuid())
+  orderId    String   @map("order_id")
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceId  String   @map("service_id")
+  service    Service  @relation(fields: [serviceId], references: [id])
+  mechanicId String?  @map("mechanic_id")
+  mechanic   Mechanic? @relation(fields: [mechanicId], references: [id])
+  price      Decimal  @db.Decimal(10, 2)
+
+  @@map("order_services")
+}
+
+// ------------------------------
+// Auditoria
+// ------------------------------
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id])
+  action    String // CREATE, UPDATE, DELETE, IMPORT_LEGACY
+  entity    String // ex: Client, Order
+  entityId  String?  @map("entity_id")
+  before    Json?
+  after     Json?
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
