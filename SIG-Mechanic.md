@@ -880,19 +880,19 @@ Logs
 # Backlog Inicial
 
 * [ ] Definir identidade visual
-* [ ] Criar banco PostgreSQL
-* [ ] Modelar tabelas
-* [ ] Criar autenticação
-* [ ] Criar RBAC
-* [ ] Cadastro de clientes
-* [ ] Cadastro de veículos
-* [ ] Cadastro de serviços
-* [ ] Cadastro de mecânicos
-* [ ] Cadastro de operadores
+* [x] Criar banco PostgreSQL
+* [x] Modelar tabelas
+* [x] Criar autenticação
+* [x] Criar RBAC
+* [x] Cadastro de clientes
+* [x] Cadastro de veículos
+* [x] Cadastro de serviços
+* [x] Cadastro de mecânicos
+* [x] Cadastro de operadores
 * [ ] Cadastro de bancos
 * [ ] Cadastro de contas
-* [ ] Ordem de Serviço
-* [ ] Orçamento
+* [x] Ordem de Serviço
+* [x] Orçamento
 * [ ] Financeiro
 * [ ] Fluxo de Caixa
 * [ ] Comissão
@@ -900,10 +900,10 @@ Logs
 * [ ] Dashboard
 * [ ] Importação DOS
 * [ ] Integração SIV-NG
-* [ ] API REST
+* [x] API REST
 * [ ] Testes automatizados
 * [ ] Backup
-* [ ] Deploy
+* [x] Deploy
 
 ---
 
@@ -964,34 +964,34 @@ scripts/
 
 ## Infraestrutura
 
-* [ ] Repositório Git
-* [ ] Ambiente de Desenvolvimento
+* [x] Repositório Git
+* [x] Ambiente de Desenvolvimento
 * [ ] Ambiente de Homologação
 * [ ] Ambiente de Produção
 * [ ] CI/CD
 
 ## Backend
 
-* [ ] Autenticação
-* [ ] APIs
-* [ ] Validações
-* [ ] Auditoria
-* [ ] Logs
+* [x] Autenticação
+* [x] APIs (Clientes, Veículos, Serviços, Mecânicos, Operadores, OS, Orçamentos)
+* [x] Validações
+* [x] Auditoria
+* [ ] Logs (estruturados/centralizados)
 
 ## Frontend
 
-* [ ] Dashboard
-* [ ] Cadastros
-* [ ] Ordem de Serviço
+* [ ] Dashboard (indicadores reais — hoje é apenas menu de navegação)
+* [x] Cadastros (listagem de todos os módulos MVP; formulários de criação/edição pendentes)
+* [x] Ordem de Serviço (listagem; criação disponível via API)
 * [ ] Financeiro
 * [ ] Relatórios
 
 ## Banco de Dados
 
-* [ ] Modelagem
-* [ ] Índices
-* [ ] Migrations
-* [ ] Seeds
+* [x] Modelagem
+* [ ] Índices (além dos criados automaticamente pelas chaves/uniques do Prisma)
+* [x] Migrations
+* [x] Seeds
 
 ## Qualidade
 

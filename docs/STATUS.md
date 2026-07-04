@@ -8,9 +8,11 @@
 
 ## Fase Atual
 
-**MVP inicial em producao (dev server)** — auth + RBAC + modulo de Clientes
-funcionando end-to-end, deployado e acessivel via Nginx no servidor de
-desenvolvimento (`http://192.168.1.202/`).
+**MVP completo em producao (dev server)** — todos os modulos do MVP do Roadmap
+(`SIG-Mechanic.md`) implementados e validados end-to-end: Login, Clientes,
+Veiculos, Servicos, Mecanicos, Operadores, Ordem de Servico e Orcamento
+(incluindo conversao Orcamento -> OS). Deployado e acessivel via Nginx no
+servidor de desenvolvimento (`http://192.168.1.202/`).
 
 ## Concluido
 
@@ -41,14 +43,32 @@ desenvolvimento (`http://192.168.1.202/`).
 - [x] Push para GitHub concluido — `cirobrandao` adicionado como colaborador
       com Write em `globalnervhub/sig-mechanic`; branch `main` publicado e
       rastreando `origin/main`
+- [x] Schema expandido: `OrderItem` (pecas na OS, sem controle de estoque),
+      `Budget`/`BudgetItem` (orcamentos com itens de peca/servico)
+      (migration `mvp_modules`)
+- [x] Backend: modulos completos (CRUD + RBAC + auditoria) para Veiculos,
+      Mecanicos, Operadores, Servicos (catalogo)
+- [x] Backend: Ordem de Servico (`/api/os`) — criacao com servicos+pecas,
+      calculo automatico de totais, transicao de status (`PATCH /:id/status`)
+- [x] Backend: Orcamentos (`/api/orcamentos`) — criacao com itens, mudanca de
+      status, e conversao para OS (`POST /:id/converter`, transacional)
+- [x] Frontend: paginas de listagem para Veiculos, Servicos, Mecanicos,
+      Operadores, OS e Orcamentos + navegacao atualizada no dashboard
+- [x] Testado end-to-end via curl: criar servico/mecanico/operador/veiculo,
+      abrir OS com pecas+servicos, criar orcamento e converte-lo em OS
+- [x] Build + deploy completo no servidor (backend e frontend rebuildados,
+      PM2 reiniciado, todas as rotas retornando 200 via Nginx)
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
-1. [ ] Tela de login real integrada com redirecionamento pos-auth + guarda de rotas no frontend
-2. [ ] Modulo de Veiculos (API + tela), vinculado a Clientes
-3. [ ] Modulo de Servicos, Mecanicos, Operadores (telas de cadastro)
-4. [ ] Ordem de Servico e Orcamento (MVP) — fluxo completo do Roadmap
-5. [ ] Popular roles adicionais e tela de gestao de usuarios/permissoes
+1. [ ] Formularios de criacao/edicao no frontend (hoje as telas novas sao
+       apenas listagem — criacao funciona via API, falta UI)
+2. [ ] Tela de login com redirecionamento pos-auth + guarda de rotas no frontend
+       (hoje o login funciona mas paginas nao protegem contra acesso sem token)
+3. [ ] Tela de gestao de usuarios/roles/permissoes (hoje só via seed/banco)
+4. [ ] Financeiro, Fluxo de Caixa e Comissao (v1.0 do Roadmap — proxima fase
+       apos o MVP)
+5. [ ] Relatorios e Dashboard com indicadores reais (v1.0 do Roadmap)
 6. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
 7. [ ] Pipeline de deploy (`scripts/server/deploy.sh`) para automatizar
       build + restart PM2 a cada atualizacao de codigo

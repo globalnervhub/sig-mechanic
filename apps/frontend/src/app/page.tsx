@@ -11,6 +11,24 @@ export default function DashboardPage() {
         <Link href="/clientes" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
           Clientes
         </Link>
+        <Link href="/veiculos" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
+          Veiculos
+        </Link>
+        <Link href="/servicos" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
+          Servicos
+        </Link>
+        <Link href="/mecanicos" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
+          Mecanicos
+        </Link>
+        <Link href="/operadores" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
+          Operadores
+        </Link>
+        <Link href="/orcamentos" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
+          Orcamentos
+        </Link>
+        <Link href="/os" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
+          Ordens de Servico
+        </Link>
         <Link href="/login" className="rounded-lg border bg-white p-4 shadow-sm hover:shadow">
           Login
         </Link>
