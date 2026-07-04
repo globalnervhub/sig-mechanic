@@ -1,0 +1,34 @@
+# Dados sensiveis do sistema legado (contem PII de clientes reais - CPF, nomes,
+# enderecos, telefones). NAO versionar. Mantido apenas localmente / no servidor
+# de trabalho. O dicionario de dados (docs/LEGACY-DATA-DICTIONARY.md) e o
+# mapeamento (docs/MIGRATION-MAPPING.md) contem apenas a estrutura de campos,
+# sem dados reais, e esses SIM sao versionados.
+/sistema/
+
+# Node / JS
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Env / segredos
+.env
+.env.*
+!.env.example
+
+# Prisma
+apps/backend/prisma/migrations/dev/
+
+# Editor / SO
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# PM2
+.pm2/
