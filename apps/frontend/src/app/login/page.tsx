@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { setSession, isAuthenticated } from '@/lib/auth';
+import DevNotice from '@/components/DevNotice';
 
 interface LoginResponse {
   accessToken: string;
@@ -76,6 +77,11 @@ export default function LoginPage() {
         >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
+
+        <DevNotice>
+          Login padrão criado pelo seed: <strong>admin@sig-mechanic.local</strong> / senha{' '}
+          <strong>ChangeMe123!</strong>. Altere essa senha antes de qualquer uso real.
+        </DevNotice>
       </form>
     </main>
   );

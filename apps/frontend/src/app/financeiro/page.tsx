@@ -32,6 +32,9 @@ interface ClientOption {
 const emptyPayableForm = { description: '', supplierName: '', dueDate: '', amount: '' };
 const emptyReceivableForm = { description: '', clientId: '', dueDate: '', amount: '' };
 
+const PAYABLE_STATUS_LABELS: Record<string, string> = { OPEN: 'Em aberto', PAID: 'Paga', CANCELLED: 'Cancelada' };
+const RECEIVABLE_STATUS_LABELS: Record<string, string> = { OPEN: 'Em aberto', RECEIVED: 'Recebida', CANCELLED: 'Cancelada' };
+
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
@@ -185,7 +188,7 @@ export default function FinanceiroPage() {
                       <td className="p-2">{p.description}</td>
                       <td className="p-2">{new Date(p.dueDate).toLocaleDateString('pt-BR')}</td>
                       <td className="p-2">R$ {p.amount}</td>
-                      <td className="p-2">{p.status}</td>
+                      <td className="p-2">{PAYABLE_STATUS_LABELS[p.status]}</td>
                       <td className="p-2">
                         {p.status === 'OPEN' && (
                           <button onClick={() => handlePay(p.id)} className="text-blue-600 hover:underline">
@@ -267,7 +270,7 @@ export default function FinanceiroPage() {
                       <td className="p-2">{r.description}</td>
                       <td className="p-2">{new Date(r.dueDate).toLocaleDateString('pt-BR')}</td>
                       <td className="p-2">R$ {r.amount}</td>
-                      <td className="p-2">{r.status}</td>
+                      <td className="p-2">{RECEIVABLE_STATUS_LABELS[r.status]}</td>
                       <td className="p-2">
                         {r.status === 'OPEN' && (
                           <button onClick={() => handleReceive(r.id)} className="text-blue-600 hover:underline">

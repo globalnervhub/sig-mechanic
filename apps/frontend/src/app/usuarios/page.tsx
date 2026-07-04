@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import { apiFetch } from '@/lib/api';
+import DevNotice from '@/components/DevNotice';
 
 interface UserRow {
   id: string;
@@ -85,7 +86,8 @@ export default function UsuariosPage() {
           <input
             required
             type="password"
-            placeholder="Senha"
+            minLength={6}
+            placeholder="Senha (min. 6 caracteres)"
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="rounded border px-3 py-2 text-sm"
@@ -111,6 +113,16 @@ export default function UsuariosPage() {
             {submitting ? 'Salvando...' : 'Adicionar Usuario'}
           </button>
           {formError && <p className="text-sm text-red-600 sm:col-span-5">{formError}</p>}
+          <div className="sm:col-span-5">
+            <DevNotice>
+              A senha digitada aqui e definida em texto puro apenas nesta sessao do navegador antes
+              de ser enviada ao servidor (que a criptografa). Minimo de 6 caracteres. Nao existe
+              ainda fluxo de "esqueci minha senha" ou troca de senha pelo proprio usuario — para
+              redefinir, recrie o usuario ou peca a um administrador para faze-lo diretamente no
+              banco. Usuario admin padrao: <strong>admin@sig-mechanic.local</strong> / senha{' '}
+              <strong>ChangeMe123!</strong>.
+            </DevNotice>
+          </div>
         </form>
 
         {loading && <p>Carregando...</p>}
