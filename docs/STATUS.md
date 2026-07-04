@@ -8,11 +8,13 @@
 
 ## Fase Atual
 
-**MVP solido em producao (dev server)** — todos os modulos do MVP do Roadmap
-implementados com CRUD completo (criar/editar/excluir), dashboard com
-indicadores reais, guarda de rotas, testes automatizados iniciais e deploy
-via git com pipeline proprio. Deployado e acessivel via Nginx no servidor de
-desenvolvimento (`http://192.168.1.202/`).
+**v1.0 do Roadmap concluida em producao (dev server)** — alem do MVP completo
+(Login, Clientes, Veiculos, Servicos, Mecanicos, Operadores, OS, Orcamentos),
+agora tambem: Financeiro (contas a pagar/receber + fluxo de caixa), Comissao
+(ledger automatico gerado ao finalizar OS), gestao de Usuarios/Roles, e
+Dashboard com indicadores reais. CRUD completo, guarda de rotas, testes
+automatizados e deploy via git com pipeline proprio. Deployado e acessivel
+via Nginx no servidor de desenvolvimento (`http://192.168.1.202/`).
 
 ## Concluido
 
@@ -85,21 +87,51 @@ desenvolvimento (`http://192.168.1.202/`).
 - [x] Validado end-to-end pos-deploy: dashboard retornando dados reais,
       criar/editar/excluir cliente via API (PATCH e DELETE confirmados com 404
       apos exclusao)
+- [x] Schema expandido (migration `financeiro_comissoes`): `Payable`,
+      `Receivable`, `Commission`
+- [x] Backend: modulo Financeiro (`/api/financeiro/pagar`,
+      `/api/financeiro/receber`) — criar conta, marcar como paga/recebida,
+      e `/api/financeiro/fluxo-caixa` com saldo consolidado (entradas -
+      saidas liquidadas)
+- [x] Backend: Comissao automatica — ao finalizar uma OS (`status=DONE`), um
+      registro de comissao e criado para cada servico com mecanico atribuido
+      (`amount = preco * commissionPercent / 100`), idempotente (upsert por
+      `orderServiceId`). Endpoint `/api/comissoes` para listar e marcar como paga
+- [x] Dashboard atualizado para usar o ledger real de comissoes pendentes
+      (antes era uma estimativa calculada; agora soma `Commission` com
+      `status=PENDING`)
+- [x] Backend: gestao de Usuarios (`/api/usuarios`) — listar, criar (com
+      hash de senha e role), ativar/desativar; `/api/usuarios/roles` para
+      listar papeis disponiveis. Nova permissao granular `usuarios.*`
+      adicionada ao seed
+- [x] Frontend: paginas Financeiro (contas a pagar/receber + saldo),
+      Comissoes (listar + marcar como paga) e Usuarios (listar + criar +
+      ativar/desativar)
+- [x] Frontend: mudanca de status da OS diretamente na listagem (select por
+      linha, chama `PATCH /api/os/:id/status`)
+- [x] Testado end-to-end via curl: conta a pagar criada e paga, conta a
+      receber criada, fluxo de caixa com saldo correto, OS finalizada
+      gerando comissao automaticamente (valor calculado corretamente),
+      usuario novo criado com role atribuida
+- [x] Limpeza: backup do deploy antigo (`/opt/sig-mechanic-scp-backup`,
+      744MB) removido do servidor apos varias execucoes estaveis do
+      `deploy.sh` git-based
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
-1. [ ] Tela de gestao de usuarios/roles/permissoes (hoje só via seed/banco)
-2. [ ] Financeiro, Fluxo de Caixa e Comissao (v1.0 do Roadmap — proxima fase
-       apos o MVP; hoje comissoes pendentes no dashboard sao apenas uma
-       estimativa calculada, sem ledger de pagamentos)
-3. [ ] Relatorios formais (exportacao/impressao) — v1.5 do Roadmap
-4. [ ] Edicao/exclusao no frontend para Ordem de Servico e Orcamentos (hoje
-       só criacao + conversao; mudanca de status da OS ainda so via API)
-5. [ ] Ampliar cobertura de testes automatizados (demais services, e2e)
-6. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
-7. [ ] Remover backup `/opt/sig-mechanic-scp-backup` no servidor apos confirmar
-       estabilidade do novo fluxo de deploy por alguns dias
-8. [ ] Iniciar importacao de dados do legado seguindo `docs/MIGRATION-MAPPING.md`
+1. [ ] Relatorios formais (exportacao/impressao em PDF) — v1.5 do Roadmap
+2. [ ] Edicao/exclusao no frontend para Ordem de Servico e Orcamentos (hoje
+       criacao + conversao + mudanca de status; falta editar itens ja criados)
+3. [ ] Cadastro de Bancos/Contas Bancarias (spec menciona, ainda nao
+       implementado — Financeiro hoje trata contas a pagar/receber sem
+       vincular a uma conta bancaria especifica)
+4. [ ] Ampliar cobertura de testes automatizados (financeiro, comissoes,
+       orders, e2e)
+5. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
+6. [ ] Importacao dos dados do sistema legado seguindo `docs/MIGRATION-MAPPING.md`
+       (aguardando definicao do formato do novo sistema alimentador)
+7. [ ] Uploads de arquivos (fotos, PDFs, comprovantes) via MinIO — provisionado
+       no servidor mas ainda nao integrado ao codigo da aplicacao
 
 ## Bloqueios / Pontos em Aberto
 

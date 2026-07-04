@@ -893,9 +893,9 @@ Logs
 * [ ] Cadastro de contas
 * [x] Ordem de Serviço
 * [x] Orçamento
-* [ ] Financeiro
-* [ ] Fluxo de Caixa
-* [ ] Comissão
+* [x] Financeiro
+* [x] Fluxo de Caixa
+* [x] Comissão
 * [ ] Relatórios
 * [x] Dashboard
 * [ ] Importação DOS
@@ -973,7 +973,7 @@ scripts/
 ## Backend
 
 * [x] Autenticação
-* [x] APIs (Clientes, Veículos, Serviços, Mecânicos, Operadores, OS, Orçamentos)
+* [x] APIs (Clientes, Veículos, Serviços, Mecânicos, Operadores, OS, Orçamentos, Financeiro, Comissões, Usuários)
 * [x] Validações
 * [x] Auditoria
 * [ ] Logs (estruturados/centralizados)
@@ -982,8 +982,8 @@ scripts/
 
 * [x] Dashboard (indicadores reais consumidos de `/api/dashboard`)
 * [x] Cadastros (criar, editar e excluir para Clientes, Veículos, Mecânicos, Operadores, Serviços)
-* [x] Ordem de Serviço (criação com serviços+peças; edição de status ainda só via API)
-* [ ] Financeiro
+* [x] Ordem de Serviço (criação com serviços+peças; mudança de status na listagem)
+* [x] Financeiro (contas a pagar/receber, fluxo de caixa, comissões)
 * [ ] Relatórios
 
 ## Banco de Dados
