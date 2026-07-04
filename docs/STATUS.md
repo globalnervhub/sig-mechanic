@@ -116,6 +116,21 @@ via Nginx no servidor de desenvolvimento (`http://192.168.1.202/`).
 - [x] Limpeza: backup do deploy antigo (`/opt/sig-mechanic-scp-backup`,
       744MB) removido do servidor apos varias execucoes estaveis do
       `deploy.sh` git-based
+- [x] Frontend validado ponta-a-ponta via navegador real (login, navegacao
+      entre todos os modulos, edicao inline, dados reais renderizados em
+      todas as paginas) — nenhum bug de aplicacao encontrado
+- [x] Traducao de status no Financeiro ("Em aberto"/"Paga"/"Recebida" em vez
+      dos valores brutos do enum) + validacao client-side de senha (min. 6
+      caracteres) no formulario de Usuarios
+- [x] Avisos visuais de desenvolvimento adicionados (componente `DevNotice`)
+      abaixo do formulario de Login e do formulario de criacao de Usuarios,
+      mostrando as credenciais padrao (`admin@sig-mechanic.local` /
+      `ChangeMe123!`) e limitacoes atuais (sem fluxo de troca/recuperacao de
+      senha). **ATENCAO:** remover o componente `DevNotice` e todos os seus
+      usos (`apps/frontend/src/components/DevNotice.tsx` e imports em
+      `login/page.tsx` e `usuarios/page.tsx`) antes de qualquer uso em
+      producao — feito deliberadamente enquanto o sistema ainda esta em
+      ambiente de desenvolvimento/testes
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
@@ -132,6 +147,9 @@ via Nginx no servidor de desenvolvimento (`http://192.168.1.202/`).
        (aguardando definicao do formato do novo sistema alimentador)
 7. [ ] Uploads de arquivos (fotos, PDFs, comprovantes) via MinIO — provisionado
        no servidor mas ainda nao integrado ao codigo da aplicacao
+8. [ ] **Antes de ir para producao:** remover o componente `DevNotice` e seus
+       usos em `login/page.tsx` e `usuarios/page.tsx` (avisos de credenciais
+       de desenvolvimento) — ver secao "Concluido" acima para detalhes
 
 ## Bloqueios / Pontos em Aberto
 
