@@ -897,11 +897,11 @@ Logs
 * [ ] Fluxo de Caixa
 * [ ] Comissão
 * [ ] Relatórios
-* [ ] Dashboard
+* [x] Dashboard
 * [ ] Importação DOS
 * [ ] Integração SIV-NG
 * [x] API REST
-* [ ] Testes automatizados
+* [x] Testes automatizados (inicial — RBAC e Clientes)
 * [ ] Backup
 * [x] Deploy
 
@@ -980,9 +980,9 @@ scripts/
 
 ## Frontend
 
-* [ ] Dashboard (indicadores reais — hoje é apenas menu de navegação)
-* [x] Cadastros (listagem de todos os módulos MVP; formulários de criação/edição pendentes)
-* [x] Ordem de Serviço (listagem; criação disponível via API)
+* [x] Dashboard (indicadores reais consumidos de `/api/dashboard`)
+* [x] Cadastros (criar, editar e excluir para Clientes, Veículos, Mecânicos, Operadores, Serviços)
+* [x] Ordem de Serviço (criação com serviços+peças; edição de status ainda só via API)
 * [ ] Financeiro
 * [ ] Relatórios
 
@@ -995,7 +995,7 @@ scripts/
 
 ## Qualidade
 
-* [ ] Testes Unitários
+* [x] Testes Unitários (inicial — RBAC Guard e ClientsService, 9 testes)
 * [ ] Testes de Integração
 * [ ] Testes End-to-End
 * [ ] Documentação da API

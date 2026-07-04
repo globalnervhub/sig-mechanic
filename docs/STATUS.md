@@ -8,11 +8,11 @@
 
 ## Fase Atual
 
-**MVP completo em producao (dev server)** — todos os modulos do MVP do Roadmap
-(`SIG-Mechanic.md`) implementados e validados end-to-end: Login, Clientes,
-Veiculos, Servicos, Mecanicos, Operadores, Ordem de Servico e Orcamento
-(incluindo conversao Orcamento -> OS). Deployado e acessivel via Nginx no
-servidor de desenvolvimento (`http://192.168.1.202/`).
+**MVP solido em producao (dev server)** — todos os modulos do MVP do Roadmap
+implementados com CRUD completo (criar/editar/excluir), dashboard com
+indicadores reais, guarda de rotas, testes automatizados iniciais e deploy
+via git com pipeline proprio. Deployado e acessivel via Nginx no servidor de
+desenvolvimento (`http://192.168.1.202/`).
 
 ## Concluido
 
@@ -69,15 +69,33 @@ servidor de desenvolvimento (`http://192.168.1.202/`).
       restart PM2, idempotente) — ver `scripts/server/README.md`
 - [x] Cutover validado: login, listagem e dados existentes preservados apos
       a migracao do deploy scp -> git
+- [x] `deploy.sh` executado e validado de ponta a ponta pela primeira vez
+      (git pull + install + testes + migrate + build + restart PM2)
+- [x] Backend: endpoint `/api/dashboard` com indicadores reais (OS abertas/
+      finalizadas, receita diaria/mensal, comissoes pendentes estimadas,
+      servicos realizados no mes, clientes novos no mes, veiculos cadastrados)
+- [x] Frontend: Dashboard consumindo indicadores reais (cards de KPI)
+- [x] CRUD completo no frontend (criar + editar + excluir) para Clientes,
+      Veiculos, Mecanicos, Operadores e Servicos
+- [x] Testes automatizados (Jest) para `PermissionsGuard` (RBAC) e
+      `ClientsService` (9 testes, todos passando) — primeiro passo do
+      checklist de Qualidade
+- [x] Housekeeping: `package-lock.json` versionado (build reprodutivel),
+      `next-env.d.ts` no `.gitignore`
+- [x] Validado end-to-end pos-deploy: dashboard retornando dados reais,
+      criar/editar/excluir cliente via API (PATCH e DELETE confirmados com 404
+      apos exclusao)
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
 1. [ ] Tela de gestao de usuarios/roles/permissoes (hoje só via seed/banco)
 2. [ ] Financeiro, Fluxo de Caixa e Comissao (v1.0 do Roadmap — proxima fase
-       apos o MVP)
-3. [ ] Relatorios e Dashboard com indicadores reais (v1.0 do Roadmap)
-4. [ ] Formularios de edicao/exclusao no frontend (hoje so ha criacao + listagem)
-5. [ ] Tela de mudanca de status da OS no frontend (hoje so via API)
+       apos o MVP; hoje comissoes pendentes no dashboard sao apenas uma
+       estimativa calculada, sem ledger de pagamentos)
+3. [ ] Relatorios formais (exportacao/impressao) — v1.5 do Roadmap
+4. [ ] Edicao/exclusao no frontend para Ordem de Servico e Orcamentos (hoje
+       só criacao + conversao; mudanca de status da OS ainda so via API)
+5. [ ] Ampliar cobertura de testes automatizados (demais services, e2e)
 6. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
 7. [ ] Remover backup `/opt/sig-mechanic-scp-backup` no servidor apos confirmar
        estabilidade do novo fluxo de deploy por alguns dias
