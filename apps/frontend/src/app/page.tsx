@@ -28,6 +28,9 @@ const MODULES = [
   { href: '/operadores', label: 'Operadores' },
   { href: '/orcamentos', label: 'Orcamentos' },
   { href: '/os', label: 'Ordens de Servico' },
+  { href: '/financeiro', label: 'Financeiro' },
+  { href: '/comissoes', label: 'Comissoes' },
+  { href: '/usuarios', label: 'Usuarios' },
 ];
 
 export default function DashboardPage() {

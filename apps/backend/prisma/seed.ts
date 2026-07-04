@@ -3,7 +3,7 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-const PERMISSION_MODULES = ['clientes', 'veiculos', 'servicos', 'mecanicos', 'operadores', 'os', 'orcamentos', 'financeiro'];
+const PERMISSION_MODULES = ['clientes', 'veiculos', 'servicos', 'mecanicos', 'operadores', 'os', 'orcamentos', 'financeiro', 'usuarios'];
 const PERMISSION_ACTIONS = ['criar', 'editar', 'excluir', 'visualizar'];
 
 async function main() {

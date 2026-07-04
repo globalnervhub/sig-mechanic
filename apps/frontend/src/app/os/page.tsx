@@ -98,6 +98,11 @@ export default function OrdensServicoPage() {
       .finally(() => setLoading(false));
   }
 
+  async function handleStatusChange(id: string, status: string) {
+    await apiFetch(`/os/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+    load();
+  }
+
   useEffect(load, []);
 
   function addServiceLine() {
@@ -314,6 +319,7 @@ export default function OrdensServicoPage() {
                 <th className="p-3">Total Pecas</th>
                 <th className="p-3">Total Servicos</th>
                 <th className="p-3">Abertura</th>
+                <th className="p-3">Mudar Status</th>
               </tr>
             </thead>
             <tbody>
@@ -327,11 +333,24 @@ export default function OrdensServicoPage() {
                   <td className="p-3">R$ {o.partsTotal}</td>
                   <td className="p-3">R$ {o.servicesTotal}</td>
                   <td className="p-3">{new Date(o.openedAt).toLocaleDateString('pt-BR')}</td>
+                  <td className="p-3">
+                    <select
+                      value={o.status}
+                      onChange={(e) => handleStatusChange(o.id, e.target.value)}
+                      className="rounded border px-2 py-1 text-xs"
+                    >
+                      {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                        <option key={value} value={value}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                 </tr>
               ))}
               {orders.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-3 text-center text-gray-500">
+                  <td colSpan={7} className="p-3 text-center text-gray-500">
                     Nenhuma ordem de servico cadastrada.
                   </td>
                 </tr>

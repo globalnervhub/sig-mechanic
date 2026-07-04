@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.module';
-import { OrderStatus } from '@prisma/client';
+import { OrderStatus, CommissionStatus } from '@prisma/client';
 
 const OPEN_STATUSES: OrderStatus[] = [
   OrderStatus.OPEN,
@@ -25,7 +25,8 @@ export class DashboardService {
       vehiclesCount,
       ordersDoneToday,
       ordersDoneThisMonth,
-      servicesThisMonth,
+      servicesThisMonthCount,
+      pendingCommissionsAgg,
     ] = await Promise.all([
       this.prisma.order.count({ where: { status: { in: OPEN_STATUSES } } }),
       this.prisma.order.count({ where: { status: OrderStatus.DONE } }),
@@ -39,9 +40,12 @@ export class DashboardService {
         where: { status: OrderStatus.DONE, closedAt: { gte: startOfMonth } },
         select: { partsTotal: true, servicesTotal: true },
       }),
-      this.prisma.orderService.findMany({
+      this.prisma.orderService.count({
         where: { order: { status: OrderStatus.DONE, closedAt: { gte: startOfMonth } } },
-        select: { price: true, mechanic: { select: { commissionPercent: true } } },
+      }),
+      this.prisma.commission.aggregate({
+        where: { status: CommissionStatus.PENDING },
+        _sum: { amount: true },
       }),
     ]);
 
@@ -50,11 +54,7 @@ export class DashboardService {
 
     const dailyRevenue = sumOrders(ordersDoneToday);
     const monthlyRevenue = sumOrders(ordersDoneThisMonth);
-
-    const pendingCommissions = servicesThisMonth.reduce((sum, s) => {
-      const pct = s.mechanic?.commissionPercent ? Number(s.mechanic.commissionPercent) : 0;
-      return sum + (Number(s.price) * pct) / 100;
-    }, 0);
+    const pendingCommissions = Number(pendingCommissionsAgg._sum.amount ?? 0);
 
     return {
       osOpen: osOpenCount,
@@ -62,7 +62,7 @@ export class DashboardService {
       dailyRevenue,
       monthlyRevenue,
       pendingCommissions,
-      servicesPerformedThisMonth: servicesThisMonth.length,
+      servicesPerformedThisMonth: servicesThisMonthCount,
       newClientsThisMonth: newClientsCount,
       vehiclesRegistered: vehiclesCount,
     };

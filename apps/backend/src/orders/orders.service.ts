@@ -64,6 +64,7 @@ export class OrdersService {
     const before = await this.findOne(id);
 
     const isClosing = dto.status === OrderStatus.DONE || dto.status === OrderStatus.CANCELLED;
+    const isBecomingDone = dto.status === OrderStatus.DONE && before.status !== OrderStatus.DONE;
 
     const order = await this.prisma.order.update({
       where: { id },
@@ -74,7 +75,48 @@ export class OrdersService {
       },
     });
 
+    if (isBecomingDone) {
+      await this.generateCommissions(before);
+    }
+
     await this.audit.log({ user, action: 'UPDATE', entity: 'Order', entityId: id, before, after: order, ip });
     return order;
+  }
+
+  /**
+   * Cria os lancamentos de comissao (um por servico com mecanico atribuido)
+   * quando a OS e finalizada. Idempotente: nao duplica se a OS for reaberta
+   * e finalizada novamente (respeita a constraint unique em orderServiceId).
+   */
+  private async generateCommissions(order: {
+    id: string;
+    orderServices: { id: string; mechanicId: string | null; price: any }[];
+  }) {
+    const eligible = order.orderServices.filter((os) => os.mechanicId);
+    if (eligible.length === 0) return;
+
+    const mechanics = await this.prisma.mechanic.findMany({
+      where: { id: { in: eligible.map((os) => os.mechanicId as string) } },
+    });
+    const mechanicById = new Map(mechanics.map((m) => [m.id, m]));
+
+    for (const os of eligible) {
+      const mechanic = mechanicById.get(os.mechanicId as string);
+      const pct = mechanic?.commissionPercent ? Number(mechanic.commissionPercent) : 0;
+      if (pct <= 0) continue;
+
+      const amount = (Number(os.price) * pct) / 100;
+
+      await this.prisma.commission.upsert({
+        where: { orderServiceId: os.id },
+        update: {},
+        create: {
+          mechanicId: os.mechanicId as string,
+          orderId: order.id,
+          orderServiceId: os.id,
+          amount,
+        },
+      });
+    }
   }
 }

@@ -90,6 +90,7 @@ model Client {
   vehicles Vehicle[]
   orders   Order[]
   budgets  Budget[]
+  receivables Receivable[]
 
   @@map("clients")
 }
@@ -141,6 +142,7 @@ model Mechanic {
   createdAt         DateTime @default(now()) @map("created_at")
 
   orderServices OrderService[]
+  commissions   Commission[]
 
   @@map("mechanics")
 }
@@ -198,6 +200,7 @@ model Order {
   orderServices OrderService[]
   orderItems    OrderItem[]
   budget        Budget?
+  commissions   Commission[]
 
   @@map("orders")
 }
@@ -220,6 +223,7 @@ model OrderService {
   mechanicId String?  @map("mechanic_id")
   mechanic   Mechanic? @relation(fields: [mechanicId], references: [id])
   price      Decimal  @db.Decimal(10, 2)
+  commission Commission?
 
   @@map("order_services")
 }
@@ -289,6 +293,83 @@ model BudgetItem {
   unitPrice   Decimal        @map("unit_price") @db.Decimal(10, 2)
 
   @@map("budget_items")
+}
+
+// ------------------------------
+// Financeiro (Contas a Pagar / Receber)
+// ------------------------------
+
+model Payable {
+  id           String        @id @default(uuid())
+  description  String
+  supplierName String?       @map("supplier_name")
+  dueDate      DateTime      @map("due_date")
+  amount       Decimal       @db.Decimal(10, 2)
+  status       PayableStatus @default(OPEN)
+  paidAt       DateTime?     @map("paid_at")
+  paidAmount   Decimal?      @map("paid_amount") @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  @@map("payables")
+}
+
+enum PayableStatus {
+  OPEN
+  PAID
+  CANCELLED
+}
+
+model Receivable {
+  id             String           @id @default(uuid())
+  description    String
+  clientId       String?          @map("client_id")
+  client         Client?          @relation(fields: [clientId], references: [id])
+  dueDate        DateTime         @map("due_date")
+  amount         Decimal          @db.Decimal(10, 2)
+  status         ReceivableStatus @default(OPEN)
+  receivedAt     DateTime?        @map("received_at")
+  receivedAmount Decimal?         @map("received_amount") @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+
+  @@map("receivables")
+}
+
+enum ReceivableStatus {
+  OPEN
+  RECEIVED
+  CANCELLED
+}
+
+// ------------------------------
+// Comissao (ledger)
+// ------------------------------
+
+// Gerado automaticamente quando uma Ordem de Servico e finalizada (status
+// DONE), um registro por servico executado com mecanico atribuido. Permite
+// controlar o pagamento da comissao separadamente da OS.
+model Commission {
+  id             String           @id @default(uuid())
+  mechanicId     String           @map("mechanic_id")
+  mechanic       Mechanic         @relation(fields: [mechanicId], references: [id])
+  orderId        String           @map("order_id")
+  order          Order            @relation(fields: [orderId], references: [id])
+  orderServiceId String           @unique @map("order_service_id")
+  orderService   OrderService     @relation(fields: [orderServiceId], references: [id])
+  amount         Decimal          @db.Decimal(10, 2)
+  status         CommissionStatus @default(PENDING)
+  paidAt         DateTime?        @map("paid_at")
+  createdAt      DateTime         @default(now()) @map("created_at")
+
+  @@map("commissions")
+}
+
+enum CommissionStatus {
+  PENDING
+  PAID
 }
 
 // ------------------------------

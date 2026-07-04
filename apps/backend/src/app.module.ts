@@ -11,6 +11,9 @@ import { ServiceCatalogModule } from './services/service-catalog.module';
 import { OrdersModule } from './orders/orders.module';
 import { BudgetsModule } from './budgets/budgets.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { FinanceiroModule } from './financeiro/financeiro.module';
+import { CommissionsModule } from './commissions/commissions.module';
+import { UsersModule } from './users/users.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -27,6 +30,9 @@ import { HealthController } from './health.controller';
     OrdersModule,
     BudgetsModule,
     DashboardModule,
+    FinanceiroModule,
+    CommissionsModule,
+    UsersModule,
   ],
   controllers: [HealthController],
 })
