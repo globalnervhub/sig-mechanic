@@ -4,7 +4,7 @@
 
 ## Ultima Atualizacao
 
-2026-07-04
+2026-07-06
 
 ## Fase Atual
 
@@ -131,6 +131,21 @@ via Nginx no servidor de desenvolvimento (`http://192.168.1.202/`).
       `login/page.tsx` e `usuarios/page.tsx`) antes de qualquer uso em
       producao — feito deliberadamente enquanto o sistema ainda esta em
       ambiente de desenvolvimento/testes
+- [x] **Overhaul de UI do frontend (2026-07-06)**: `AppShell` reescrito de
+      navbar superior para sidebar lateral com grupos de navegacao (Cadastros,
+      Operacao, Financeiro, Administracao), responsivo (menu hamburguer +
+      overlay no mobile), titulo dinamico da pagina no cabecalho. Criado
+      sistema global de notificacoes `Toast` (`useToast()`, sucesso/erro/info,
+      auto-dismiss) e componente `StatusBadge` (pill colorido padronizado para
+      todos os status: ativo/inativo, status de OS, orcamento, contas a
+      pagar/receber, comissao). Aplicado consistentemente em todas as
+      paginas (Clientes, Veiculos, Mecanicos, Operadores, Servicos, OS,
+      Orcamentos, Financeiro, Comissoes, Usuarios): titulos `<h1>` duplicados
+      removidos (o cabecalho da sidebar ja exibe o titulo), busca com debounce
+      (300ms) adicionada nas listagens de catalogo, linhas de tabela com
+      hover, feedback de sucesso/erro via toast em todas as acoes de
+      criar/editar/excluir/mudar status. Build e deploy validados no servidor
+      sem erros (PM2 online, logs limpos)
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
@@ -171,8 +186,13 @@ via Nginx no servidor de desenvolvimento (`http://192.168.1.202/`).
 - Servidor dev: `192.168.1.202` (root, chave SSH configurada — ver
   `/memories/repo/servidor-desenvolvimento-info.md`)
 - App acessivel em: `http://192.168.1.202/` (frontend) e `http://192.168.1.202/api` (backend)
-- Deploy atual em: `/opt/sig-mechanic` no servidor (copiado via scp; ainda nao
-  ha pipeline automatico de `git pull` + deploy — proximo passo sugerido)
+- Deploy atual em: `/opt/sig-mechanic` no servidor, checkout git da branch
+  `main` (`origin` = `https://github.com/globalnervhub/sig-mechanic.git`).
+  Para atualizar: `git push` local + `ssh root@192.168.1.202 "cd /opt/sig-mechanic && ./scripts/server/deploy.sh"`
+  (idempotente: git pull + npm install + prisma migrate deploy + build + pm2 restart)
+- Node/npm NAO estao instalados na maquina Windows local de desenvolvimento —
+  builds e testes do frontend/backend so podem ser validados no servidor
+  (via deploy.sh) ou rodando `npm run build`/`npm test` remotamente por SSH
 - Repositorio GitHub: `https://github.com/globalnervhub/sig-mechanic` (ativo,
   branch `main` publicado)
 - Usuario admin (seed): `admin@sig-mechanic.local` / `ChangeMe123!` — **alterar
