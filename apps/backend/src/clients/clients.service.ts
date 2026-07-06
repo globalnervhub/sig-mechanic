@@ -21,10 +21,12 @@ export class ClientsService {
               { cpf: { contains: search } },
               { cnpj: { contains: search } },
               { phone: { contains: search } },
+              { legacyCode: { contains: search, mode: 'insensitive' } },
             ],
           }
         : undefined,
       orderBy: { name: 'asc' },
+      take: 50,
     });
   }
 

@@ -16,7 +16,7 @@ export class BudgetsService {
   findAll(status?: BudgetStatus, clientId?: string) {
     return this.prisma.budget.findMany({
       where: { status: status ?? undefined, clientId: clientId ?? undefined },
-      include: { client: true, vehicle: true, items: true },
+      include: { client: true, vehicle: { include: { brand: true, model: true } }, items: true },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -24,7 +24,7 @@ export class BudgetsService {
   async findOne(id: string) {
     const budget = await this.prisma.budget.findUnique({
       where: { id },
-      include: { client: true, vehicle: true, items: { include: { service: true } } },
+      include: { client: true, vehicle: { include: { brand: true, model: true } }, items: { include: { service: true } } },
     });
     if (!budget) {
       throw new NotFoundException('Orcamento nao encontrado');

@@ -28,14 +28,17 @@ const ICONS = {
   dashboard: 'M3 13h4v8H3zM10 3h4v18h-4zM17 8h4v13h-4z',
   clientes: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM4 21a8 8 0 0116 0',
   veiculos: 'M5 17h14M5 17a2 2 0 100 4 2 2 0 000-4zm14 0a2 2 0 100 4 2 2 0 000-4zM5 17l1.5-6h11L19 17M6.5 11l1-3.5A2 2 0 019.4 6h5.2a2 2 0 011.9 1.5l1 3.5',
+  marcas: 'M20.6 12.3l-8.4-8.4c-.4-.4-.9-.6-1.4-.6H4a1 1 0 00-1 1v6.8c0 .5.2 1 .6 1.4l8.4 8.4c.8.8 2 .8 2.8 0l5.8-5.8c.8-.8.8-2 0-2.8zM7 8a1 1 0 110-2 1 1 0 010 2z',
   servicos: 'M14.7 6.3a4 4 0 10-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 005.4-5.4l-2.8 2.8-2.2-2.2z',
   mecanicos: 'M11 4a2 2 0 100 4 2 2 0 000-4zM3 20c0-3.3 3.6-6 8-6s8 2.7 8 6',
   operadores: 'M8 7a3 3 0 106 0 3 3 0 00-6 0zM2 20c0-2.8 2.7-5 6-5M22 20c0-2.8-2.7-5-6-5M14 20c0-2.8-2.7-5-6-5s-6 2.2-6 5',
   orcamentos: 'M9 12h6M9 16h6M9 8h6M6 4h12a1 1 0 011 1v15l-3-2-2 2-2-2-2 2-2-2-3 2V5a1 1 0 011-1z',
   os: 'M9 3h6l1 3h3a1 1 0 011 1v13a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h3zM9 12l2 2 4-4',
+  trocasOleo: 'M12 2c-3 4-6 7.5-6 11a6 6 0 0012 0c0-3.5-3-7-6-11z',
   financeiro: 'M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6',
   comissoes: 'M12 8v8M8 12h8M12 22a10 10 0 100-20 10 10 0 000 20z',
   usuarios: 'M12 12a4 4 0 100-8 4 4 0 000 8zM4 21a8 8 0 0116 0',
+  papeis: 'M9 12l2 2 4-4m5.6-1.4a9 9 0 11-12.7 0M12 3v4',
 };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -45,6 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/clientes', label: 'Clientes', icon: <Icon d={ICONS.clientes} /> },
       { href: '/veiculos', label: 'Veiculos', icon: <Icon d={ICONS.veiculos} /> },
+      { href: '/marcas', label: 'Marcas e Modelos', icon: <Icon d={ICONS.marcas} /> },
       { href: '/servicos', label: 'Servicos', icon: <Icon d={ICONS.servicos} /> },
       { href: '/mecanicos', label: 'Mecanicos', icon: <Icon d={ICONS.mecanicos} /> },
       { href: '/operadores', label: 'Operadores', icon: <Icon d={ICONS.operadores} /> },
@@ -55,6 +59,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: '/orcamentos', label: 'Orcamentos', icon: <Icon d={ICONS.orcamentos} /> },
       { href: '/os', label: 'Ordens de Servico', icon: <Icon d={ICONS.os} /> },
+      { href: '/trocas-oleo', label: 'Trocas de Oleo', icon: <Icon d={ICONS.trocasOleo} /> },
     ],
   },
   {
@@ -66,7 +71,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     title: 'Administracao',
-    items: [{ href: '/usuarios', label: 'Usuarios', icon: <Icon d={ICONS.usuarios} /> }],
+    items: [
+      { href: '/usuarios', label: 'Usuarios', icon: <Icon d={ICONS.usuarios} /> },
+      { href: '/papeis', label: 'Papeis e Permissoes', icon: <Icon d={ICONS.papeis} /> },
+    ],
   },
 ];
 

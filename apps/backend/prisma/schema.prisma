@@ -104,12 +104,40 @@ enum ClientType {
 // Veiculos
 // ------------------------------
 
+model VehicleBrand {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  models   VehicleModel[]
+  vehicles Vehicle[]
+
+  @@map("vehicle_brands")
+}
+
+model VehicleModel {
+  id        String   @id @default(uuid())
+  brandId   String   @map("brand_id")
+  brand     VehicleBrand @relation(fields: [brandId], references: [id])
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  vehicles Vehicle[]
+
+  @@unique([brandId, name])
+  @@map("vehicle_models")
+}
+
 model Vehicle {
   id         String   @id @default(uuid())
   clientId   String   @map("client_id")
   client     Client   @relation(fields: [clientId], references: [id])
-  brand      String
-  model      String
+  brandId    String   @map("brand_id")
+  brand      VehicleBrand @relation(fields: [brandId], references: [id])
+  modelId    String   @map("model_id")
+  model      VehicleModel @relation(fields: [modelId], references: [id])
   year       String?
   color      String?
   fuel       String?
@@ -121,10 +149,34 @@ model Vehicle {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  orders  Order[]
-  budgets Budget[]
+  orders     Order[]
+  budgets    Budget[]
+  oilChanges OilChangeRecord[]
 
   @@map("vehicles")
+}
+
+// ------------------------------
+// Controle de Troca de Oleo
+// ------------------------------
+
+// Historico de trocas de oleo por veiculo, independente da OS (pode ser
+// registrado avulso ou vinculado a uma Ordem de Servico especifica).
+model OilChangeRecord {
+  id             String    @id @default(uuid())
+  vehicleId      String    @map("vehicle_id")
+  vehicle        Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  orderId        String?   @map("order_id")
+  order          Order?    @relation(fields: [orderId], references: [id])
+  changeDate     DateTime  @map("change_date")
+  currentKm      Int       @map("current_km")
+  nextChangeKm   Int?      @map("next_change_km")
+  nextChangeDate DateTime? @map("next_change_date")
+  oilType        String?   @map("oil_type")
+  notes          String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@map("oil_change_records")
 }
 
 // ------------------------------
@@ -201,6 +253,7 @@ model Order {
   orderItems    OrderItem[]
   budget        Budget?
   commissions   Commission[]
+  oilChanges    OilChangeRecord[]
 
   @@map("orders")
 }

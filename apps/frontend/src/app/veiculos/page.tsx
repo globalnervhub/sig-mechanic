@@ -1,36 +1,47 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import AppShell from '@/components/AppShell';
+import ClientAutocomplete, { ClientOption } from '@/components/ClientAutocomplete';
 import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Vehicle {
   id: string;
   clientId: string;
-  brand: string;
-  model: string;
+  brand: { id: string; name: string };
+  model: { id: string; name: string };
   plate: string;
   year?: string;
   color?: string;
   client: { name: string };
 }
 
-interface ClientOption {
+interface BrandOption {
   id: string;
   name: string;
 }
 
-const emptyForm = { clientId: '', brand: '', model: '', year: '', plate: '', color: '' };
+interface ModelOption {
+  id: string;
+  name: string;
+  brandId: string;
+}
+
+const emptyForm = { clientId: '', brandId: '', modelId: '', year: '', plate: '', color: '' };
 
 export default function VeiculosPage() {
   const { showToast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [clients, setClients] = useState<ClientOption[]>([]);
+  const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [models, setModels] = useState<ModelOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState(emptyForm);
+  const [clientLabel, setClientLabel] = useState('');
+  const [formKey, setFormKey] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -38,14 +49,25 @@ export default function VeiculosPage() {
   function load(term?: string) {
     setLoading(true);
     const query = term ? `?search=${encodeURIComponent(term)}` : '';
-    Promise.all([apiFetch<Vehicle[]>(`/veiculos${query}`), apiFetch<ClientOption[]>('/clientes')])
-      .then(([v, c]) => {
-        setVehicles(v);
-        setClients(c);
-      })
+    apiFetch<Vehicle[]>(`/veiculos${query}`)
+      .then(setVehicles)
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar veiculos'))
       .finally(() => setLoading(false));
   }
+
+  useEffect(() => {
+    apiFetch<BrandOption[]>('/marcas').then(setBrands).catch(() => setBrands([]));
+  }, []);
+
+  useEffect(() => {
+    if (!form.brandId) {
+      setModels([]);
+      return;
+    }
+    apiFetch<ModelOption[]>(`/modelos?brandId=${form.brandId}`)
+      .then(setModels)
+      .catch(() => setModels([]));
+  }, [form.brandId]);
 
   useEffect(() => {
     const timeout = setTimeout(() => load(search), 300);
@@ -55,19 +77,23 @@ export default function VeiculosPage() {
 
   function startEdit(vehicle: Vehicle) {
     setEditingId(vehicle.id);
+    setClientLabel(vehicle.client?.name ?? '');
     setForm({
       clientId: vehicle.clientId,
-      brand: vehicle.brand,
-      model: vehicle.model,
+      brandId: vehicle.brand.id,
+      modelId: vehicle.model.id,
       year: vehicle.year ?? '',
       plate: vehicle.plate,
       color: vehicle.color ?? '',
     });
+    setFormKey((k) => k + 1);
   }
 
   function cancelEdit() {
     setEditingId(null);
     setForm(emptyForm);
+    setClientLabel('');
+    setFormKey((k) => k + 1);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,8 +108,7 @@ export default function VeiculosPage() {
         await apiFetch('/veiculos', { method: 'POST', body: JSON.stringify(form) });
         showToast('Veiculo cadastrado com sucesso.');
       }
-      setForm(emptyForm);
-      setEditingId(null);
+      cancelEdit();
       load(search);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao salvar veiculo';
@@ -108,7 +133,10 @@ export default function VeiculosPage() {
   return (
     <AppShell>
       <main className="mx-auto max-w-5xl p-6 md:p-8">
-        <div className="mb-6 flex justify-end">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Link href="/marcas" className="text-sm text-blue-600 hover:underline">
+            Gerenciar Marcas e Modelos
+          </Link>
           <input
             placeholder="Buscar por placa, marca ou modelo..."
             value={search}
@@ -117,34 +145,45 @@ export default function VeiculosPage() {
           />
         </div>
 
-        <form onSubmit={handleSubmit} className="mb-8 grid grid-cols-1 gap-3 rounded-lg border bg-white p-4 sm:grid-cols-6">
+        <form
+          key={formKey}
+          onSubmit={handleSubmit}
+          className="mb-8 grid grid-cols-1 gap-3 rounded-lg border bg-white p-4 sm:grid-cols-6"
+        >
+          <div className="sm:col-span-2">
+            <ClientAutocomplete
+              required
+              initialLabel={clientLabel}
+              onSelect={(c: ClientOption | null) => setForm({ ...form, clientId: c?.id ?? '' })}
+            />
+          </div>
           <select
             required
-            value={form.clientId}
-            onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-            className="rounded border px-3 py-2 text-sm sm:col-span-2"
+            value={form.brandId}
+            onChange={(e) => setForm({ ...form, brandId: e.target.value, modelId: '' })}
+            className="rounded border px-3 py-2 text-sm"
           >
-            <option value="">Selecione o cliente</option>
-            {clients.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
+            <option value="">Marca</option>
+            {brands.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.name}
               </option>
             ))}
           </select>
-          <input
+          <select
             required
-            placeholder="Marca"
-            value={form.brand}
-            onChange={(e) => setForm({ ...form, brand: e.target.value })}
+            value={form.modelId}
+            onChange={(e) => setForm({ ...form, modelId: e.target.value })}
+            disabled={!form.brandId}
             className="rounded border px-3 py-2 text-sm"
-          />
-          <input
-            required
-            placeholder="Modelo"
-            value={form.model}
-            onChange={(e) => setForm({ ...form, model: e.target.value })}
-            className="rounded border px-3 py-2 text-sm"
-          />
+          >
+            <option value="">Modelo</option>
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
           <input
             placeholder="Ano"
             value={form.year}
@@ -167,7 +206,7 @@ export default function VeiculosPage() {
           <div className="flex gap-2">
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || !form.clientId}
               className="flex-1 rounded bg-gray-900 px-4 py-2 text-sm text-white disabled:opacity-50"
             >
               {submitting ? 'Salvando...' : editingId ? 'Salvar' : 'Adicionar Veiculo'}
@@ -200,8 +239,8 @@ export default function VeiculosPage() {
               {vehicles.map((v) => (
                 <tr key={v.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{v.plate}</td>
-                  <td className="p-3">{v.brand}</td>
-                  <td className="p-3">{v.model}</td>
+                  <td className="p-3">{v.brand?.name}</td>
+                  <td className="p-3">{v.model?.name}</td>
                   <td className="p-3">{v.year ?? '-'}</td>
                   <td className="p-3">{v.client?.name}</td>
                   <td className="p-3 space-x-2">

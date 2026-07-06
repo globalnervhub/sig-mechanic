@@ -17,18 +17,23 @@ export class VehiclesService {
       where: {
         clientId: clientId ?? undefined,
         OR: search
-          ? [{ plate: { contains: search, mode: 'insensitive' } }, { brand: { contains: search, mode: 'insensitive' } }, { model: { contains: search, mode: 'insensitive' } }]
+          ? [
+              { plate: { contains: search, mode: 'insensitive' } },
+              { brand: { name: { contains: search, mode: 'insensitive' } } },
+              { model: { name: { contains: search, mode: 'insensitive' } } },
+            ]
           : undefined,
       },
-      include: { client: true },
+      include: { client: true, brand: true, model: true },
       orderBy: { createdAt: 'desc' },
+      take: clientId ? undefined : 50,
     });
   }
 
   async findOne(id: string) {
     const vehicle = await this.prisma.vehicle.findUnique({
       where: { id },
-      include: { client: true },
+      include: { client: true, brand: true, model: true, oilChanges: { orderBy: { changeDate: 'desc' } } },
     });
     if (!vehicle) {
       throw new NotFoundException('Veiculo nao encontrado');

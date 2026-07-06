@@ -16,7 +16,7 @@ export class CommissionsService {
       where: { status: status ?? undefined, mechanicId: mechanicId ?? undefined },
       include: {
         mechanic: true,
-        order: { include: { client: true, vehicle: true } },
+        order: { include: { client: true, vehicle: { include: { brand: true, model: true } } } },
         orderService: { include: { service: true } },
       },
       orderBy: { createdAt: 'desc' },

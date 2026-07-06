@@ -16,7 +16,7 @@ export class OrdersService {
   findAll(status?: OrderStatus, clientId?: string) {
     return this.prisma.order.findMany({
       where: { status: status ?? undefined, clientId: clientId ?? undefined },
-      include: { client: true, vehicle: true, orderServices: { include: { service: true, mechanic: true } }, orderItems: true },
+      include: { client: true, vehicle: { include: { brand: true, model: true } }, orderServices: { include: { service: true, mechanic: true } }, orderItems: true },
       orderBy: { openedAt: 'desc' },
     });
   }
@@ -24,7 +24,7 @@ export class OrdersService {
   async findOne(id: string) {
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: { client: true, vehicle: true, orderServices: { include: { service: true, mechanic: true } }, orderItems: true },
+      include: { client: true, vehicle: { include: { brand: true, model: true } }, orderServices: { include: { service: true, mechanic: true } }, orderItems: true },
     });
     if (!order) {
       throw new NotFoundException('Ordem de servico nao encontrada');

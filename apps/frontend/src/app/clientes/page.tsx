@@ -8,6 +8,7 @@ import { apiFetch } from '@/lib/api';
 
 interface Client {
   id: string;
+  legacyCode?: string;
   type: 'PF' | 'PJ';
   name: string;
   phone?: string;
@@ -16,12 +17,13 @@ interface Client {
   active: boolean;
 }
 
-const emptyForm: { type: 'PF' | 'PJ'; name: string; phone: string; email: string; city: string } = {
+const emptyForm: { type: 'PF' | 'PJ'; name: string; phone: string; email: string; city: string; legacyCode: string } = {
   type: 'PF',
   name: '',
   phone: '',
   email: '',
   city: '',
+  legacyCode: '',
 };
 
 export default function ClientesPage() {
@@ -58,6 +60,7 @@ export default function ClientesPage() {
       phone: client.phone ?? '',
       email: client.email ?? '',
       city: client.city ?? '',
+      legacyCode: client.legacyCode ?? '',
     });
   }
 
@@ -106,7 +109,7 @@ export default function ClientesPage() {
       <main className="mx-auto max-w-5xl p-6 md:p-8">
         <div className="mb-6 flex justify-end">
           <input
-            placeholder="Buscar por nome, CPF/CNPJ ou telefone..."
+            placeholder="Buscar por nome, CPF/CNPJ, telefone ou codigo legado..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded border px-3 py-2 text-sm sm:w-72"
@@ -128,6 +131,12 @@ export default function ClientesPage() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="rounded border px-3 py-2 text-sm sm:col-span-2"
+          />
+          <input
+            placeholder="Codigo legado (opcional)"
+            value={form.legacyCode}
+            onChange={(e) => setForm({ ...form, legacyCode: e.target.value })}
+            className="rounded border px-3 py-2 text-sm"
           />
           <input
             placeholder="Telefone"
@@ -176,6 +185,7 @@ export default function ClientesPage() {
           <table className="w-full border-collapse overflow-hidden rounded-lg border bg-white text-sm">
             <thead className="bg-gray-100 text-left">
               <tr>
+                <th className="p-3">Codigo</th>
                 <th className="p-3">Nome</th>
                 <th className="p-3">Telefone</th>
                 <th className="p-3">Email</th>
@@ -187,6 +197,7 @@ export default function ClientesPage() {
             <tbody>
               {clients.map((client) => (
                 <tr key={client.id} className="border-t hover:bg-gray-50">
+                  <td className="p-3 text-gray-500">{client.legacyCode ?? '-'}</td>
                   <td className="p-3">{client.name}</td>
                   <td className="p-3">{client.phone ?? '-'}</td>
                   <td className="p-3">{client.email ?? '-'}</td>
@@ -207,7 +218,7 @@ export default function ClientesPage() {
               ))}
               {clients.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="p-3 text-center text-gray-500">
+                  <td colSpan={7} className="p-3 text-center text-gray-500">
                     Nenhum cliente cadastrado.
                   </td>
                 </tr>

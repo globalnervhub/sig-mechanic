@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import StatusBadge from '@/components/StatusBadge';
+import ClientAutocomplete, { ClientOption } from '@/components/ClientAutocomplete';
 import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
@@ -15,20 +16,15 @@ interface Order {
   partsTotal: string;
   servicesTotal: string;
   client: { name: string };
-  vehicle: { plate: string; brand: string; model: string };
-}
-
-interface ClientOption {
-  id: string;
-  name: string;
+  vehicle: { plate: string; brand: { name: string }; model: { name: string } };
 }
 
 interface VehicleOption {
   id: string;
   clientId: string;
   plate: string;
-  brand: string;
-  model: string;
+  brand: { name: string };
+  model: { name: string };
 }
 
 interface ServiceOption {
@@ -66,7 +62,6 @@ const STATUS_LABELS: Record<string, string> = {
 export default function OrdensServicoPage() {
   const { showToast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [clients, setClients] = useState<ClientOption[]>([]);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [mechanics, setMechanics] = useState<MechanicOption[]>([]);
@@ -80,26 +75,33 @@ export default function OrdensServicoPage() {
   const [partLines, setPartLines] = useState<PartLine[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   function load() {
     setLoading(true);
     Promise.all([
       apiFetch<Order[]>('/os'),
-      apiFetch<ClientOption[]>('/clientes'),
-      apiFetch<VehicleOption[]>('/veiculos'),
       apiFetch<ServiceOption[]>('/servicos'),
       apiFetch<MechanicOption[]>('/mecanicos'),
     ])
-      .then(([o, c, v, s, m]) => {
+      .then(([o, s, m]) => {
         setOrders(o);
-        setClients(c);
-        setVehicles(v);
         setServices(s);
         setMechanics(m);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar ordens de servico'))
       .finally(() => setLoading(false));
   }
+
+  useEffect(() => {
+    if (!clientId) {
+      setVehicles([]);
+      return;
+    }
+    apiFetch<VehicleOption[]>(`/veiculos?clientId=${clientId}`)
+      .then(setVehicles)
+      .catch(() => setVehicles([]));
+  }, [clientId]);
 
   async function handleStatusChange(id: string, status: string) {
     try {
@@ -145,6 +147,7 @@ export default function OrdensServicoPage() {
       setNotes('');
       setServiceLines([]);
       setPartLines([]);
+      setFormKey((k) => k + 1);
       showToast('Ordem de servico criada com sucesso.');
       load();
     } catch (err) {
@@ -156,30 +159,19 @@ export default function OrdensServicoPage() {
     }
   }
 
-  const vehiclesForClient = vehicles.filter((v) => v.clientId === clientId);
-
   return (
     <AppShell>
       <main className="mx-auto max-w-5xl p-6 md:p-8">
 
-        <form onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-lg border bg-white p-4">
+        <form key={formKey} onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-lg border bg-white p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <select
+            <ClientAutocomplete
               required
-              value={clientId}
-              onChange={(e) => {
-                setClientId(e.target.value);
+              onSelect={(c: ClientOption | null) => {
+                setClientId(c?.id ?? '');
                 setVehicleId('');
               }}
-              className="rounded border px-3 py-2 text-sm"
-            >
-              <option value="">Selecione o cliente</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            />
             <select
               required
               value={vehicleId}
@@ -188,9 +180,9 @@ export default function OrdensServicoPage() {
               className="rounded border px-3 py-2 text-sm"
             >
               <option value="">Selecione o veiculo</option>
-              {vehiclesForClient.map((v) => (
+              {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.plate} — {v.brand} {v.model}
+                  {v.plate} — {v.brand.name} {v.model.name}
                 </option>
               ))}
             </select>
@@ -337,7 +329,7 @@ export default function OrdensServicoPage() {
                 <tr key={o.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{o.client?.name}</td>
                   <td className="p-3">
-                    {o.vehicle?.plate} ({o.vehicle?.brand} {o.vehicle?.model})
+                    {o.vehicle?.plate} ({o.vehicle?.brand?.name} {o.vehicle?.model?.name})
                   </td>
                   <td className="p-3">
                     <StatusBadge status={o.status} />

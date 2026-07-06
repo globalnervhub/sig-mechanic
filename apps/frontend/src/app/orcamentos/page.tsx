@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import StatusBadge from '@/components/StatusBadge';
+import ClientAutocomplete, { ClientOption } from '@/components/ClientAutocomplete';
 import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
@@ -15,11 +16,6 @@ interface Budget {
   client: { name: string };
   vehicle?: { plate: string };
   items: { id: string; description: string; quantity: number; unitPrice: string }[];
-}
-
-interface ClientOption {
-  id: string;
-  name: string;
 }
 
 interface VehicleOption {
@@ -45,7 +41,6 @@ interface ItemLine {
 export default function OrcamentosPage() {
   const { showToast } = useToast();
   const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [clients, setClients] = useState<ClientOption[]>([]);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -56,19 +51,13 @@ export default function OrcamentosPage() {
   const [items, setItems] = useState<ItemLine[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   function load() {
     setLoading(true);
-    Promise.all([
-      apiFetch<Budget[]>('/orcamentos'),
-      apiFetch<ClientOption[]>('/clientes'),
-      apiFetch<VehicleOption[]>('/veiculos'),
-      apiFetch<ServiceOption[]>('/servicos'),
-    ])
-      .then(([b, c, v, s]) => {
+    Promise.all([apiFetch<Budget[]>('/orcamentos'), apiFetch<ServiceOption[]>('/servicos')])
+      .then(([b, s]) => {
         setBudgets(b);
-        setClients(c);
-        setVehicles(v);
         setServices(s);
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar orcamentos'))
@@ -76,6 +65,16 @@ export default function OrcamentosPage() {
   }
 
   useEffect(load, []);
+
+  useEffect(() => {
+    if (!clientId) {
+      setVehicles([]);
+      return;
+    }
+    apiFetch<VehicleOption[]>(`/veiculos?clientId=${clientId}`)
+      .then(setVehicles)
+      .catch(() => setVehicles([]));
+  }, [clientId]);
 
   function addItem() {
     setItems([...items, { type: 'SERVICE', serviceId: '', description: '', quantity: '1', unitPrice: '' }]);
@@ -134,30 +133,19 @@ export default function OrcamentosPage() {
     }
   }
 
-  const vehiclesForClient = vehicles.filter((v) => v.clientId === clientId);
-
   return (
     <AppShell>
       <main className="mx-auto max-w-5xl p-6 md:p-8">
 
-        <form onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-lg border bg-white p-4">
+        <form key={formKey} onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-lg border bg-white p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <select
+            <ClientAutocomplete
               required
-              value={clientId}
-              onChange={(e) => {
-                setClientId(e.target.value);
+              onSelect={(c: ClientOption | null) => {
+                setClientId(c?.id ?? '');
                 setVehicleId('');
               }}
-              className="rounded border px-3 py-2 text-sm"
-            >
-              <option value="">Selecione o cliente</option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            />
             <select
               value={vehicleId}
               onChange={(e) => setVehicleId(e.target.value)}
@@ -165,7 +153,7 @@ export default function OrcamentosPage() {
               className="rounded border px-3 py-2 text-sm"
             >
               <option value="">Veiculo (opcional, necessario para converter em OS)</option>
-              {vehiclesForClient.map((v) => (
+              {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
                   {v.plate}
                 </option>

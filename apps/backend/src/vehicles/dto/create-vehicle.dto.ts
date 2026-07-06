@@ -5,12 +5,10 @@ export class CreateVehicleDto {
   clientId!: string;
 
   @IsString()
-  @MaxLength(60)
-  brand!: string;
+  brandId!: string;
 
   @IsString()
-  @MaxLength(60)
-  model!: string;
+  modelId!: string;
 
   @IsOptional()
   @IsString()

@@ -3,7 +3,19 @@ import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-const PERMISSION_MODULES = ['clientes', 'veiculos', 'servicos', 'mecanicos', 'operadores', 'os', 'orcamentos', 'financeiro', 'usuarios'];
+const PERMISSION_MODULES = [
+  'clientes',
+  'veiculos',
+  'servicos',
+  'mecanicos',
+  'operadores',
+  'os',
+  'orcamentos',
+  'financeiro',
+  'usuarios',
+  'papeis',
+  'trocas_oleo',
+];
 const PERMISSION_ACTIONS = ['criar', 'editar', 'excluir', 'visualizar'];
 
 async function main() {
@@ -48,6 +60,59 @@ async function main() {
       }),
     ),
   );
+
+  // 2b. Roles adicionais: Financeiro e Vendas/Balcao
+  async function grantPermissions(roleId: string, codes: string[]) {
+    const codeSet = new Set(codes);
+    const toGrant = permissions.filter((p) => codeSet.has(p.code));
+    await Promise.all(
+      toGrant.map((perm) =>
+        prisma.rolePermission.upsert({
+          where: { roleId_permissionId: { roleId, permissionId: perm.id } },
+          update: {},
+          create: { roleId, permissionId: perm.id },
+        }),
+      ),
+    );
+  }
+
+  function allActions(module: string) {
+    return PERMISSION_ACTIONS.map((action) => `${module}.${action}`);
+  }
+
+  const financeiroRole = await prisma.role.upsert({
+    where: { name: 'Financeiro' },
+    update: {},
+    create: { name: 'Financeiro', description: 'Contas a pagar/receber, fluxo de caixa e comissoes' },
+  });
+
+  await grantPermissions(financeiroRole.id, [
+    ...allActions('financeiro'),
+    'clientes.visualizar',
+    'veiculos.visualizar',
+    'os.visualizar',
+    'orcamentos.visualizar',
+    'mecanicos.visualizar',
+  ]);
+
+  const vendasRole = await prisma.role.upsert({
+    where: { name: 'Vendas/Balcao' },
+    update: {},
+    create: { name: 'Vendas/Balcao', description: 'Atendimento no balcao: clientes, veiculos, orcamentos, OS e usuarios' },
+  });
+
+  await grantPermissions(vendasRole.id, [
+    ...allActions('clientes'),
+    ...allActions('veiculos'),
+    ...allActions('os'),
+    ...allActions('orcamentos'),
+    ...allActions('trocas_oleo'),
+    'servicos.visualizar',
+    'mecanicos.visualizar',
+    'operadores.visualizar',
+    'usuarios.criar',
+    'usuarios.visualizar',
+  ]);
 
   // 3. Usuario admin inicial
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@sig-mechanic.local';
