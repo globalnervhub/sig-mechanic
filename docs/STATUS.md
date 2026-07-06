@@ -4,7 +4,7 @@
 
 ## Ultima Atualizacao
 
-2026-07-06
+2026-07-06 (sessao 2)
 
 ## Fase Atual
 
@@ -146,6 +146,55 @@ via Nginx no servidor de desenvolvimento (`http://192.168.1.202/`).
       hover, feedback de sucesso/erro via toast em todas as acoes de
       criar/editar/excluir/mudar status. Build e deploy validados no servidor
       sem erros (PM2 online, logs limpos)
+- [x] **Cadastro de Marca/Modelo de veiculos (2026-07-06)**: novos models
+      `VehicleBrand`/`VehicleModel` (migration `vehicle_catalog_oilchange`,
+      com backfill automatico dos dados livres existentes). `Vehicle.brand`/
+      `model` (texto livre) substituidos por `brandId`/`modelId` (FK).
+      Backend: modulo `vehicle-catalog` (`/api/marcas`, `/api/modelos`, CRUD
+      completo, reaproveita permissoes `veiculos.*`). Frontend: pagina
+      `/marcas` (gerenciar marcas + modelos por marca) e formulario de
+      Veiculos atualizado para selects em cascata (marca -> modelo) em vez
+      de texto livre — elimina dados mockados/inconsistentes
+- [x] **Controle de Troca de Oleo (2026-07-06)**: novo model
+      `OilChangeRecord` (km atual, proxima troca por km e/ou data, tipo de
+      oleo, observacoes, vinculo opcional a uma OS). Backend: modulo
+      `oil-changes` (`/api/trocas-oleo`, `/api/trocas-oleo/veiculos` para a
+      visao geral com a ultima troca de cada veiculo). Frontend: pagina
+      `/trocas-oleo` com registro de novas trocas e historico completo por
+      veiculo. Atualiza automaticamente `vehicle.currentKm` quando a nova
+      leitura e maior que a registrada
+- [x] **Gerenciamento de Papeis e Permissoes (2026-07-06)**: novo modulo
+      `roles` (`/api/papeis`) permitindo criar papeis, listar permissoes
+      disponiveis agrupadas por modulo, e editar a matriz de permissoes de
+      cada papel (`PATCH /api/papeis/:id/permissoes`) sem precisar mexer no
+      seed/banco diretamente. Frontend: pagina `/papeis` com matriz de
+      checkboxes (modulo x acao) por papel. Bloqueia exclusao de papel com
+      usuarios atribuidos
+- [x] **Novos papeis padrao (2026-07-06)**: `Financeiro` (contas a
+      pagar/receber, fluxo de caixa, comissoes + visualizacao de
+      clientes/veiculos/OS/orcamentos/mecanicos) e `Vendas/Balcao`
+      (clientes, veiculos, orcamentos, OS e trocas de oleo completos, mais
+      criacao/visualizacao de usuarios, conforme perfil de atendimento no
+      balcao) adicionados ao seed junto com os papeis existentes
+      (Administrador, Operador)
+- [x] **Busca dinamica de clientes (2026-07-06)**: novo componente
+      `ClientAutocomplete` (busca por nome, CPF/CNPJ, telefone ou
+      `legacyCode`, com debounce de 300ms) substitui os antigos `<select>`
+      com todos os +5000 clientes pre-carregados nos formularios de
+      Veiculos, Ordem de Servico e Orcamentos. Backend: busca de clientes
+      agora tambem cobre `legacyCode` e limita resultados a 50 registros por
+      consulta. Campo `legacyCode` (codigo do cliente no sistema legado)
+      exposto no cadastro/listagem de Clientes
+- [x] **Ferramenta de importacao do legado (2026-07-06)**: script
+      `apps/backend/scripts/import-legacy.ts` (`npm run import:legacy`,
+      suporta `--dry-run` e `--only=clientes|veiculos`) le `clientes.dbf` e
+      `carros.dbf` (reconstruindo o vinculo cliente-veiculo via `ctr_os.dbf`,
+      conforme `docs/MIGRATION-MAPPING.md`) e importa de forma idempotente
+      (upsert por `legacyCode`/placa). **Ainda NAO testado com os arquivos
+      .DBF reais** (nao presentes neste ambiente/servidor no momento) —
+      rodar `--dry-run` primeiro assim que os arquivos estiverem disponiveis
+      em `sistema/`. Ainda nao cobre Ordens de Servico/financeiro (proxima
+      etapa, mesmo padrao)
 
 ## Em Andamento / Proximos Passos (ordem sugerida)
 
@@ -156,15 +205,20 @@ via Nginx no servidor de desenvolvimento (`http://192.168.1.202/`).
        implementado — Financeiro hoje trata contas a pagar/receber sem
        vincular a uma conta bancaria especifica)
 4. [ ] Ampliar cobertura de testes automatizados (financeiro, comissoes,
-       orders, e2e)
+       orders, vehicle-catalog, oil-changes, roles, e2e)
 5. [ ] HTTPS no Nginx (Let's Encrypt ou certificado interno) antes de expor externamente
-6. [ ] Importacao dos dados do sistema legado seguindo `docs/MIGRATION-MAPPING.md`
-       (aguardando definicao do formato do novo sistema alimentador)
+6. [ ] Rodar a ferramenta de importacao (`import:legacy`) com os arquivos
+       .DBF reais assim que disponiveis (comecar com `--dry-run`), depois
+       estender o script para Ordens de Servico (`lan_pec.dbf`/`lan_ser.dbf`)
+       e financeiro (`contas_p.dbf`/`contas_r.dbf`) seguindo o mesmo padrao
 7. [ ] Uploads de arquivos (fotos, PDFs, comprovantes) via MinIO — provisionado
        no servidor mas ainda nao integrado ao codigo da aplicacao
 8. [ ] **Antes de ir para producao:** remover o componente `DevNotice` e seus
        usos em `login/page.tsx` e `usuarios/page.tsx` (avisos de credenciais
        de desenvolvimento) — ver secao "Concluido" acima para detalhes
+9. [ ] Revisar/ajustar os conjuntos de permissoes padrao dos papeis
+       `Financeiro` e `Vendas/Balcao` (definidos por inferencia nesta sessao)
+       usando a nova tela `/papeis` conforme o uso real da equipe
 
 ## Bloqueios / Pontos em Aberto
 
