@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Budget {
@@ -40,23 +42,14 @@ interface ItemLine {
   unitPrice: string;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: 'Rascunho',
-  SENT: 'Enviado',
-  APPROVED: 'Aprovado',
-  REJECTED: 'Rejeitado',
-  CONVERTED: 'Convertido em OS',
-  EXPIRED: 'Expirado',
-};
-
 export default function OrcamentosPage() {
+  const { showToast } = useToast();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
   const [services, setServices] = useState<ServiceOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [actionError, setActionError] = useState<string | null>(null);
 
   const [clientId, setClientId] = useState('');
   const [vehicleId, setVehicleId] = useState('');
@@ -110,21 +103,34 @@ export default function OrcamentosPage() {
       setClientId('');
       setVehicleId('');
       setItems([]);
+      showToast('Orcamento criado com sucesso.');
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao criar orcamento');
+      const message = err instanceof Error ? err.message : 'Erro ao criar orcamento';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
   }
 
   async function handleConvert(id: string) {
-    setActionError(null);
     try {
       await apiFetch(`/orcamentos/${id}/converter`, { method: 'POST' });
+      showToast('Orcamento convertido em Ordem de Servico.');
       load();
     } catch (err) {
-      setActionError(err instanceof Error ? err.message : 'Erro ao converter orcamento');
+      showToast(err instanceof Error ? err.message : 'Erro ao converter orcamento', 'error');
+    }
+  }
+
+  async function handleStatusUpdate(id: string, status: string) {
+    try {
+      await apiFetch(`/orcamentos/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      showToast('Status do orcamento atualizado.');
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao atualizar status', 'error');
     }
   }
 
@@ -132,8 +138,7 @@ export default function OrcamentosPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold">Orcamentos</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
 
         <form onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-lg border bg-white p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -261,9 +266,8 @@ export default function OrcamentosPage() {
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </form>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error} — faca login em /login.</p>}
-        {actionError && <p className="mb-4 text-sm text-red-600">{actionError}</p>}
 
         {!loading && !error && (
           <table className="w-full border-collapse overflow-hidden rounded-lg border bg-white text-sm">
@@ -279,15 +283,38 @@ export default function OrcamentosPage() {
             </thead>
             <tbody>
               {budgets.map((b) => (
-                <tr key={b.id} className="border-t">
+                <tr key={b.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{b.client?.name}</td>
                   <td className="p-3">{b.vehicle?.plate ?? '-'}</td>
                   <td className="p-3">{b.items?.length ?? 0}</td>
                   <td className="p-3">R$ {b.discount}</td>
-                  <td className="p-3">{STATUS_LABELS[b.status] ?? b.status}</td>
                   <td className="p-3">
-                    {b.status !== 'CONVERTED' && b.vehicle && (
-                      <button onClick={() => handleConvert(b.id)} className="text-blue-600 hover:underline">
+                    <StatusBadge status={b.status} />
+                  </td>
+                  <td className="p-3 space-x-2">
+                    {b.status === 'DRAFT' && (
+                      <button onClick={() => handleStatusUpdate(b.id, 'SENT')} className="text-blue-600 hover:underline">
+                        Enviar
+                      </button>
+                    )}
+                    {b.status === 'SENT' && (
+                      <>
+                        <button
+                          onClick={() => handleStatusUpdate(b.id, 'APPROVED')}
+                          className="text-emerald-600 hover:underline"
+                        >
+                          Aprovar
+                        </button>
+                        <button
+                          onClick={() => handleStatusUpdate(b.id, 'REJECTED')}
+                          className="text-red-600 hover:underline"
+                        >
+                          Rejeitar
+                        </button>
+                      </>
+                    )}
+                    {(b.status === 'APPROVED' || b.status === 'SENT' || b.status === 'DRAFT') && b.vehicle && (
+                      <button onClick={() => handleConvert(b.id)} className="text-indigo-600 hover:underline">
                         Converter em OS
                       </button>
                     )}

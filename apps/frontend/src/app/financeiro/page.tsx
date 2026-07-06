@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Payable {
@@ -32,14 +34,12 @@ interface ClientOption {
 const emptyPayableForm = { description: '', supplierName: '', dueDate: '', amount: '' };
 const emptyReceivableForm = { description: '', clientId: '', dueDate: '', amount: '' };
 
-const PAYABLE_STATUS_LABELS: Record<string, string> = { OPEN: 'Em aberto', PAID: 'Paga', CANCELLED: 'Cancelada' };
-const RECEIVABLE_STATUS_LABELS: Record<string, string> = { OPEN: 'Em aberto', RECEIVED: 'Recebida', CANCELLED: 'Cancelada' };
-
 function formatCurrency(value: number) {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 export default function FinanceiroPage() {
+  const { showToast } = useToast();
   const [payables, setPayables] = useState<Payable[]>([]);
   const [receivables, setReceivables] = useState<Receivable[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
@@ -80,9 +80,12 @@ export default function FinanceiroPage() {
         body: JSON.stringify({ ...payableForm, amount: Number(payableForm.amount) }),
       });
       setPayableForm(emptyPayableForm);
+      showToast('Conta a pagar criada.');
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao criar conta a pagar');
+      const message = err instanceof Error ? err.message : 'Erro ao criar conta a pagar';
+      setFormError(message);
+      showToast(message, 'error');
     }
   }
 
@@ -99,35 +102,47 @@ export default function FinanceiroPage() {
         }),
       });
       setReceivableForm(emptyReceivableForm);
+      showToast('Conta a receber criada.');
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao criar conta a receber');
+      const message = err instanceof Error ? err.message : 'Erro ao criar conta a receber';
+      setFormError(message);
+      showToast(message, 'error');
     }
   }
 
   async function handlePay(id: string) {
     if (!confirm('Confirmar pagamento total desta conta?')) return;
-    await apiFetch(`/financeiro/pagar/${id}/pagar`, { method: 'PATCH', body: JSON.stringify({}) });
-    load();
+    try {
+      await apiFetch(`/financeiro/pagar/${id}/pagar`, { method: 'PATCH', body: JSON.stringify({}) });
+      showToast('Conta marcada como paga.');
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao pagar conta', 'error');
+    }
   }
 
   async function handleReceive(id: string) {
     if (!confirm('Confirmar recebimento total desta conta?')) return;
-    await apiFetch(`/financeiro/receber/${id}/receber`, { method: 'PATCH', body: JSON.stringify({}) });
-    load();
+    try {
+      await apiFetch(`/financeiro/receber/${id}/receber`, { method: 'PATCH', body: JSON.stringify({}) });
+      showToast('Conta marcada como recebida.');
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao receber conta', 'error');
+    }
   }
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-2 text-2xl font-semibold">Financeiro</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
         {balance !== null && (
           <p className="mb-6 text-sm text-gray-600">
             Saldo atual (fluxo de caixa): <span className="font-semibold">{formatCurrency(balance)}</span>
           </p>
         )}
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
         {formError && <p className="mb-4 text-sm text-red-600">{formError}</p>}
 
@@ -184,11 +199,13 @@ export default function FinanceiroPage() {
                 </thead>
                 <tbody>
                   {payables.map((p) => (
-                    <tr key={p.id} className="border-t">
+                    <tr key={p.id} className="border-t hover:bg-gray-50">
                       <td className="p-2">{p.description}</td>
                       <td className="p-2">{new Date(p.dueDate).toLocaleDateString('pt-BR')}</td>
                       <td className="p-2">R$ {p.amount}</td>
-                      <td className="p-2">{PAYABLE_STATUS_LABELS[p.status]}</td>
+                      <td className="p-2">
+                        <StatusBadge status={p.status} />
+                      </td>
                       <td className="p-2">
                         {p.status === 'OPEN' && (
                           <button onClick={() => handlePay(p.id)} className="text-blue-600 hover:underline">
@@ -266,11 +283,13 @@ export default function FinanceiroPage() {
                 </thead>
                 <tbody>
                   {receivables.map((r) => (
-                    <tr key={r.id} className="border-t">
+                    <tr key={r.id} className="border-t hover:bg-gray-50">
                       <td className="p-2">{r.description}</td>
                       <td className="p-2">{new Date(r.dueDate).toLocaleDateString('pt-BR')}</td>
                       <td className="p-2">R$ {r.amount}</td>
-                      <td className="p-2">{RECEIVABLE_STATUS_LABELS[r.status]}</td>
+                      <td className="p-2">
+                        <StatusBadge status={r.status} />
+                      </td>
                       <td className="p-2">
                         {r.status === 'OPEN' && (
                           <button onClick={() => handleReceive(r.id)} className="text-blue-600 hover:underline">

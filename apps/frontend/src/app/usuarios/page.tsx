@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 import DevNotice from '@/components/DevNotice';
 
@@ -21,6 +23,7 @@ interface RoleOption {
 const emptyForm = { name: '', email: '', password: '', roleId: '' };
 
 export default function UsuariosPage() {
+  const { showToast } = useToast();
   const [users, setUsers] = useState<UserRow[]>([]);
   const [roles, setRoles] = useState<RoleOption[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -49,23 +52,30 @@ export default function UsuariosPage() {
     try {
       await apiFetch('/usuarios', { method: 'POST', body: JSON.stringify(form) });
       setForm(emptyForm);
+      showToast('Usuario criado com sucesso.');
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao criar usuario');
+      const message = err instanceof Error ? err.message : 'Erro ao criar usuario';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
   }
 
   async function toggleActive(user: UserRow) {
-    await apiFetch(`/usuarios/${user.id}`, { method: 'PATCH', body: JSON.stringify({ active: !user.active }) });
-    load();
+    try {
+      await apiFetch(`/usuarios/${user.id}`, { method: 'PATCH', body: JSON.stringify({ active: !user.active }) });
+      showToast(user.active ? 'Usuario desativado.' : 'Usuario ativado.');
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao atualizar usuario', 'error');
+    }
   }
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold">Usuarios</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
 
         <form onSubmit={handleSubmit} className="mb-8 grid grid-cols-1 gap-3 rounded-lg border bg-white p-4 sm:grid-cols-5">
           <input
@@ -125,7 +135,7 @@ export default function UsuariosPage() {
           </div>
         </form>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         {!loading && !error && (
@@ -141,11 +151,13 @@ export default function UsuariosPage() {
             </thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.id} className="border-t">
+                <tr key={u.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{u.name}</td>
                   <td className="p-3">{u.email}</td>
                   <td className="p-3">{u.role?.name}</td>
-                  <td className="p-3">{u.active ? 'Ativo' : 'Inativo'}</td>
+                  <td className="p-3">
+                    <StatusBadge status={u.active ? 'ATIVO' : 'INATIVO'} />
+                  </td>
                   <td className="p-3">
                     <button onClick={() => toggleActive(u)} className="text-blue-600 hover:underline">
                       {u.active ? 'Desativar' : 'Ativar'}

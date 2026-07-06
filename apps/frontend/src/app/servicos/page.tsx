@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface ServiceItem {
@@ -16,24 +18,30 @@ interface ServiceItem {
 const emptyForm = { name: '', category: '', price: '', avgTimeMin: '' };
 
 export default function ServicosPage() {
+  const { showToast } = useToast();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [rowError, setRowError] = useState<string | null>(null);
 
-  function load() {
+  function load(term?: string) {
     setLoading(true);
-    apiFetch<ServiceItem[]>('/servicos')
+    const query = term ? `?search=${encodeURIComponent(term)}` : '';
+    apiFetch<ServiceItem[]>(`/servicos${query}`)
       .then(setServices)
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar servicos'))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(() => {
+    const timeout = setTimeout(() => load(search), 300);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   function startEdit(service: ServiceItem) {
     setEditingId(service.id);
@@ -62,14 +70,18 @@ export default function ServicosPage() {
       };
       if (editingId) {
         await apiFetch(`/servicos/${editingId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        showToast('Servico atualizado com sucesso.');
       } else {
         await apiFetch('/servicos', { method: 'POST', body: JSON.stringify(payload) });
+        showToast('Servico cadastrado com sucesso.');
       }
       setForm(emptyForm);
       setEditingId(null);
-      load();
+      load(search);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao salvar servico');
+      const message = err instanceof Error ? err.message : 'Erro ao salvar servico';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -77,19 +89,26 @@ export default function ServicosPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Excluir este servico?')) return;
-    setRowError(null);
     try {
       await apiFetch(`/servicos/${id}`, { method: 'DELETE' });
-      load();
+      showToast('Servico excluido.');
+      load(search);
     } catch (err) {
-      setRowError(err instanceof Error ? err.message : 'Erro ao excluir servico');
+      showToast(err instanceof Error ? err.message : 'Erro ao excluir servico', 'error');
     }
   }
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold">Servicos</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
+        <div className="mb-6 flex justify-end">
+          <input
+            placeholder="Buscar por nome..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm sm:w-72"
+          />
+        </div>
 
         <form onSubmit={handleSubmit} className="mb-8 grid grid-cols-1 gap-3 rounded-lg border bg-white p-4 sm:grid-cols-5">
           <input
@@ -138,9 +157,8 @@ export default function ServicosPage() {
           {formError && <p className="text-sm text-red-600 sm:col-span-5">{formError}</p>}
         </form>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error} — faca login em /login.</p>}
-        {rowError && <p className="mb-4 text-sm text-red-600">{rowError}</p>}
 
         {!loading && !error && (
           <table className="w-full border-collapse overflow-hidden rounded-lg border bg-white text-sm">
@@ -156,12 +174,14 @@ export default function ServicosPage() {
             </thead>
             <tbody>
               {services.map((s) => (
-                <tr key={s.id} className="border-t">
+                <tr key={s.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{s.name}</td>
                   <td className="p-3">{s.category ?? '-'}</td>
                   <td className="p-3">R$ {s.price}</td>
                   <td className="p-3">{s.avgTimeMin ?? '-'}</td>
-                  <td className="p-3">{s.active ? 'Ativo' : 'Inativo'}</td>
+                  <td className="p-3">
+                    <StatusBadge status={s.active ? 'ATIVO' : 'INATIVO'} />
+                  </td>
                   <td className="p-3 space-x-2">
                     <button onClick={() => startEdit(s)} className="text-blue-600 hover:underline">
                       Editar

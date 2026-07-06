@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Order {
@@ -62,6 +64,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function OrdensServicoPage() {
+  const { showToast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
@@ -99,8 +102,13 @@ export default function OrdensServicoPage() {
   }
 
   async function handleStatusChange(id: string, status: string) {
-    await apiFetch(`/os/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
-    load();
+    try {
+      await apiFetch(`/os/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      showToast('Status da OS atualizado.');
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao atualizar status', 'error');
+    }
   }
 
   useEffect(load, []);
@@ -137,9 +145,12 @@ export default function OrdensServicoPage() {
       setNotes('');
       setServiceLines([]);
       setPartLines([]);
+      showToast('Ordem de servico criada com sucesso.');
       load();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao criar ordem de servico');
+      const message = err instanceof Error ? err.message : 'Erro ao criar ordem de servico';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -149,8 +160,7 @@ export default function OrdensServicoPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold">Ordens de Servico</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
 
         <form onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-lg border bg-white p-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -306,7 +316,7 @@ export default function OrdensServicoPage() {
           {formError && <p className="text-sm text-red-600">{formError}</p>}
         </form>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error} — faca login em /login.</p>}
 
         {!loading && !error && (
@@ -324,12 +334,14 @@ export default function OrdensServicoPage() {
             </thead>
             <tbody>
               {orders.map((o) => (
-                <tr key={o.id} className="border-t">
+                <tr key={o.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{o.client?.name}</td>
                   <td className="p-3">
                     {o.vehicle?.plate} ({o.vehicle?.brand} {o.vehicle?.model})
                   </td>
-                  <td className="p-3">{STATUS_LABELS[o.status] ?? o.status}</td>
+                  <td className="p-3">
+                    <StatusBadge status={o.status} />
+                  </td>
                   <td className="p-3">R$ {o.partsTotal}</td>
                   <td className="p-3">R$ {o.servicesTotal}</td>
                   <td className="p-3">{new Date(o.openedAt).toLocaleDateString('pt-BR')}</td>

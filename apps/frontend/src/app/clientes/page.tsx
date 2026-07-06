@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Client {
@@ -23,24 +25,30 @@ const emptyForm: { type: 'PF' | 'PJ'; name: string; phone: string; email: string
 };
 
 export default function ClientesPage() {
+  const { showToast } = useToast();
   const [clients, setClients] = useState<Client[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [rowError, setRowError] = useState<string | null>(null);
 
-  function load() {
+  function load(term?: string) {
     setLoading(true);
-    apiFetch<Client[]>('/clientes')
+    const query = term ? `?search=${encodeURIComponent(term)}` : '';
+    apiFetch<Client[]>(`/clientes${query}`)
       .then(setClients)
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar clientes'))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(() => {
+    const timeout = setTimeout(() => load(search), 300);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   function startEdit(client: Client) {
     setEditingId(client.id);
@@ -65,14 +73,18 @@ export default function ClientesPage() {
     try {
       if (editingId) {
         await apiFetch(`/clientes/${editingId}`, { method: 'PATCH', body: JSON.stringify(form) });
+        showToast('Cliente atualizado com sucesso.');
       } else {
         await apiFetch('/clientes', { method: 'POST', body: JSON.stringify(form) });
+        showToast('Cliente criado com sucesso.');
       }
       setForm(emptyForm);
       setEditingId(null);
-      load();
+      load(search);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao salvar cliente');
+      const message = err instanceof Error ? err.message : 'Erro ao salvar cliente';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -80,19 +92,26 @@ export default function ClientesPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Excluir este cliente?')) return;
-    setRowError(null);
     try {
       await apiFetch(`/clientes/${id}`, { method: 'DELETE' });
-      load();
+      showToast('Cliente excluido.');
+      load(search);
     } catch (err) {
-      setRowError(err instanceof Error ? err.message : 'Erro ao excluir cliente');
+      showToast(err instanceof Error ? err.message : 'Erro ao excluir cliente', 'error');
     }
   }
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold">Clientes</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
+        <div className="mb-6 flex justify-end">
+          <input
+            placeholder="Buscar por nome, CPF/CNPJ ou telefone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm sm:w-72"
+          />
+        </div>
 
         <form onSubmit={handleSubmit} className="mb-8 grid grid-cols-1 gap-3 rounded-lg border bg-white p-4 sm:grid-cols-5">
           <select
@@ -146,13 +165,12 @@ export default function ClientesPage() {
           {formError && <p className="text-sm text-red-600 sm:col-span-5">{formError}</p>}
         </form>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && (
           <p className="text-sm text-red-600">
             {error} — verifique se voce esta autenticado (faca login em /login).
           </p>
         )}
-        {rowError && <p className="mb-4 text-sm text-red-600">{rowError}</p>}
 
         {!loading && !error && (
           <table className="w-full border-collapse overflow-hidden rounded-lg border bg-white text-sm">
@@ -168,12 +186,15 @@ export default function ClientesPage() {
             </thead>
             <tbody>
               {clients.map((client) => (
-                <tr key={client.id} className="border-t">
+                <tr key={client.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{client.name}</td>
                   <td className="p-3">{client.phone ?? '-'}</td>
                   <td className="p-3">{client.email ?? '-'}</td>
                   <td className="p-3">{client.city ?? '-'}</td>
-                  <td className="p-3">{client.active ? 'Ativo' : 'Inativo'}</td>
+                  <td className="p-3">
+                    <StatusBadge status={client.active ? 'ATIVO' : 'INATIVO'} />
+                  </td>
+
                   <td className="p-3 space-x-2">
                     <button onClick={() => startEdit(client)} className="text-blue-600 hover:underline">
                       Editar

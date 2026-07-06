@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Mechanic {
@@ -16,24 +18,30 @@ interface Mechanic {
 const emptyForm = { name: '', phone: '', specialty: '', commissionPercent: '' };
 
 export default function MecanicosPage() {
+  const { showToast } = useToast();
   const [mechanics, setMechanics] = useState<Mechanic[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [rowError, setRowError] = useState<string | null>(null);
 
-  function load() {
+  function load(term?: string) {
     setLoading(true);
-    apiFetch<Mechanic[]>('/mecanicos')
+    const query = term ? `?search=${encodeURIComponent(term)}` : '';
+    apiFetch<Mechanic[]>(`/mecanicos${query}`)
       .then(setMechanics)
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar mecanicos'))
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(() => {
+    const timeout = setTimeout(() => load(search), 300);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   function startEdit(mechanic: Mechanic) {
     setEditingId(mechanic.id);
@@ -61,14 +69,18 @@ export default function MecanicosPage() {
       };
       if (editingId) {
         await apiFetch(`/mecanicos/${editingId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+        showToast('Mecanico atualizado com sucesso.');
       } else {
         await apiFetch('/mecanicos', { method: 'POST', body: JSON.stringify(payload) });
+        showToast('Mecanico cadastrado com sucesso.');
       }
       setForm(emptyForm);
       setEditingId(null);
-      load();
+      load(search);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao salvar mecanico');
+      const message = err instanceof Error ? err.message : 'Erro ao salvar mecanico';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -76,19 +88,26 @@ export default function MecanicosPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Excluir este mecanico?')) return;
-    setRowError(null);
     try {
       await apiFetch(`/mecanicos/${id}`, { method: 'DELETE' });
-      load();
+      showToast('Mecanico excluido.');
+      load(search);
     } catch (err) {
-      setRowError(err instanceof Error ? err.message : 'Erro ao excluir mecanico');
+      showToast(err instanceof Error ? err.message : 'Erro ao excluir mecanico', 'error');
     }
   }
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold">Mecanicos</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
+        <div className="mb-6 flex justify-end">
+          <input
+            placeholder="Buscar por nome..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm sm:w-72"
+          />
+        </div>
 
         <form onSubmit={handleSubmit} className="mb-8 grid grid-cols-1 gap-3 rounded-lg border bg-white p-4 sm:grid-cols-5">
           <input
@@ -135,9 +154,8 @@ export default function MecanicosPage() {
           {formError && <p className="text-sm text-red-600 sm:col-span-5">{formError}</p>}
         </form>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error} — faca login em /login.</p>}
-        {rowError && <p className="mb-4 text-sm text-red-600">{rowError}</p>}
 
         {!loading && !error && (
           <table className="w-full border-collapse overflow-hidden rounded-lg border bg-white text-sm">
@@ -153,12 +171,14 @@ export default function MecanicosPage() {
             </thead>
             <tbody>
               {mechanics.map((m) => (
-                <tr key={m.id} className="border-t">
+                <tr key={m.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{m.name}</td>
                   <td className="p-3">{m.phone ?? '-'}</td>
                   <td className="p-3">{m.specialty ?? '-'}</td>
                   <td className="p-3">{m.commissionPercent ?? '-'}</td>
-                  <td className="p-3">{m.active ? 'Ativo' : 'Inativo'}</td>
+                  <td className="p-3">
+                    <StatusBadge status={m.active ? 'ATIVO' : 'INATIVO'} />
+                  </td>
                   <td className="p-3 space-x-2">
                     <button onClick={() => startEdit(m)} className="text-blue-600 hover:underline">
                       Editar

@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import StatusBadge from '@/components/StatusBadge';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Commission {
@@ -14,6 +16,7 @@ interface Commission {
 }
 
 export default function ComissoesPage() {
+  const { showToast } = useToast();
   const [commissions, setCommissions] = useState<Commission[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,8 +33,13 @@ export default function ComissoesPage() {
 
   async function handleMarkPaid(id: string) {
     if (!confirm('Marcar esta comissao como paga?')) return;
-    await apiFetch(`/comissoes/${id}/pagar`, { method: 'PATCH' });
-    load();
+    try {
+      await apiFetch(`/comissoes/${id}/pagar`, { method: 'PATCH' });
+      showToast('Comissao marcada como paga.');
+      load();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Erro ao marcar comissao como paga', 'error');
+    }
   }
 
   const totalPending = commissions
@@ -40,8 +48,7 @@ export default function ComissoesPage() {
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-2 text-2xl font-semibold">Comissoes</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
         <p className="mb-6 text-sm text-gray-600">
           Total pendente:{' '}
           <span className="font-semibold">
@@ -49,7 +56,7 @@ export default function ComissoesPage() {
           </span>
         </p>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error}</p>}
 
         {!loading && !error && (
@@ -66,14 +73,16 @@ export default function ComissoesPage() {
             </thead>
             <tbody>
               {commissions.map((c) => (
-                <tr key={c.id} className="border-t">
+                <tr key={c.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{c.mechanic?.name}</td>
                   <td className="p-3">
                     {c.order?.client?.name} — {c.order?.vehicle?.plate}
                   </td>
                   <td className="p-3">{c.orderService?.service?.name}</td>
                   <td className="p-3">R$ {c.amount}</td>
-                  <td className="p-3">{c.status === 'PAID' ? 'Paga' : 'Pendente'}</td>
+                  <td className="p-3">
+                    <StatusBadge status={c.status} />
+                  </td>
                   <td className="p-3">
                     {c.status === 'PENDING' && (
                       <button onClick={() => handleMarkPaid(c.id)} className="text-blue-600 hover:underline">

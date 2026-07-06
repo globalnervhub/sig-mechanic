@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import { useToast } from '@/components/Toast';
 import { apiFetch } from '@/lib/api';
 
 interface Vehicle {
@@ -23,19 +24,21 @@ interface ClientOption {
 const emptyForm = { clientId: '', brand: '', model: '', year: '', plate: '', color: '' };
 
 export default function VeiculosPage() {
+  const { showToast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [clients, setClients] = useState<ClientOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [rowError, setRowError] = useState<string | null>(null);
 
-  function load() {
+  function load(term?: string) {
     setLoading(true);
-    Promise.all([apiFetch<Vehicle[]>('/veiculos'), apiFetch<ClientOption[]>('/clientes')])
+    const query = term ? `?search=${encodeURIComponent(term)}` : '';
+    Promise.all([apiFetch<Vehicle[]>(`/veiculos${query}`), apiFetch<ClientOption[]>('/clientes')])
       .then(([v, c]) => {
         setVehicles(v);
         setClients(c);
@@ -44,7 +47,11 @@ export default function VeiculosPage() {
       .finally(() => setLoading(false));
   }
 
-  useEffect(load, []);
+  useEffect(() => {
+    const timeout = setTimeout(() => load(search), 300);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   function startEdit(vehicle: Vehicle) {
     setEditingId(vehicle.id);
@@ -70,14 +77,18 @@ export default function VeiculosPage() {
     try {
       if (editingId) {
         await apiFetch(`/veiculos/${editingId}`, { method: 'PATCH', body: JSON.stringify(form) });
+        showToast('Veiculo atualizado com sucesso.');
       } else {
         await apiFetch('/veiculos', { method: 'POST', body: JSON.stringify(form) });
+        showToast('Veiculo cadastrado com sucesso.');
       }
       setForm(emptyForm);
       setEditingId(null);
-      load();
+      load(search);
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'Erro ao salvar veiculo');
+      const message = err instanceof Error ? err.message : 'Erro ao salvar veiculo';
+      setFormError(message);
+      showToast(message, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -85,19 +96,26 @@ export default function VeiculosPage() {
 
   async function handleDelete(id: string) {
     if (!confirm('Excluir este veiculo?')) return;
-    setRowError(null);
     try {
       await apiFetch(`/veiculos/${id}`, { method: 'DELETE' });
-      load();
+      showToast('Veiculo excluido.');
+      load(search);
     } catch (err) {
-      setRowError(err instanceof Error ? err.message : 'Erro ao excluir veiculo');
+      showToast(err instanceof Error ? err.message : 'Erro ao excluir veiculo', 'error');
     }
   }
 
   return (
     <AppShell>
-      <main className="mx-auto max-w-5xl p-8">
-        <h1 className="mb-6 text-2xl font-semibold">Veiculos</h1>
+      <main className="mx-auto max-w-5xl p-6 md:p-8">
+        <div className="mb-6 flex justify-end">
+          <input
+            placeholder="Buscar por placa, marca ou modelo..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full rounded border px-3 py-2 text-sm sm:w-72"
+          />
+        </div>
 
         <form onSubmit={handleSubmit} className="mb-8 grid grid-cols-1 gap-3 rounded-lg border bg-white p-4 sm:grid-cols-6">
           <select
@@ -163,9 +181,8 @@ export default function VeiculosPage() {
           {formError && <p className="text-sm text-red-600 sm:col-span-6">{formError}</p>}
         </form>
 
-        {loading && <p>Carregando...</p>}
+        {loading && <p className="text-gray-500">Carregando...</p>}
         {error && <p className="text-sm text-red-600">{error} — faca login em /login.</p>}
-        {rowError && <p className="mb-4 text-sm text-red-600">{rowError}</p>}
 
         {!loading && !error && (
           <table className="w-full border-collapse overflow-hidden rounded-lg border bg-white text-sm">
@@ -181,7 +198,7 @@ export default function VeiculosPage() {
             </thead>
             <tbody>
               {vehicles.map((v) => (
-                <tr key={v.id} className="border-t">
+                <tr key={v.id} className="border-t hover:bg-gray-50">
                   <td className="p-3">{v.plate}</td>
                   <td className="p-3">{v.brand}</td>
                   <td className="p-3">{v.model}</td>
