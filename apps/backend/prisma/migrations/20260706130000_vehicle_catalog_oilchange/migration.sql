@@ -39,6 +39,11 @@ CREATE TABLE "oil_change_records" (
 ALTER TABLE "vehicles" ADD COLUMN "brand_id" TEXT;
 ALTER TABLE "vehicles" ADD COLUMN "model_id" TEXT;
 
+-- CreateIndex (precisam existir antes do backfill, que usa ON CONFLICT nestas colunas)
+CREATE UNIQUE INDEX "vehicle_brands_name_key" ON "vehicle_brands"("name");
+
+CREATE UNIQUE INDEX "vehicle_models_brand_id_name_key" ON "vehicle_models"("brand_id", "name");
+
 -- Backfill: cria uma marca para cada valor distinto ja existente na coluna livre "brand"
 INSERT INTO "vehicle_brands" ("id", "name")
 SELECT gen_random_uuid()::text, d.brand_name
@@ -102,12 +107,6 @@ ALTER TABLE "vehicles" ALTER COLUMN "model_id" SET NOT NULL;
 -- Remove as colunas antigas de texto livre
 ALTER TABLE "vehicles" DROP COLUMN "brand";
 ALTER TABLE "vehicles" DROP COLUMN "model";
-
--- CreateIndex
-CREATE UNIQUE INDEX "vehicle_brands_name_key" ON "vehicle_brands"("name");
-
--- CreateIndex
-CREATE UNIQUE INDEX "vehicle_models_brand_id_name_key" ON "vehicle_models"("brand_id", "name");
 
 -- AddForeignKey
 ALTER TABLE "vehicle_models" ADD CONSTRAINT "vehicle_models_brand_id_fkey" FOREIGN KEY ("brand_id") REFERENCES "vehicle_brands"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
